@@ -4,18 +4,20 @@ import { useDispatch, useSelector } from "react-redux"
 import {
   initializeAccounts,
   changeChain,
+  changeConnected,
   setAccountErrorMessage,
   setChainErrorMessage,
   setContextErrorMessage,
 } from "../redux/reducers"
 import { Account, Networks } from "."
-import { AccountState } from "../models"
+import { AccountState, ConnectInfo, ProviderRpcError } from "../models"
 import { RootState } from "../redux/store"
 
 export const Context = () => {
   const dispatch = useDispatch()
   const errorMessage = useSelector((state: RootState) => state.context.errorMessage)
-  const connectHandler = async () => {
+  const connect = async () => {
+    console.log("connectHandler IN")
     if (window.ethereum) {
       const { ethereum } = window
 
@@ -23,51 +25,90 @@ export const Context = () => {
         const accounts = (await ethereum.request({
           method: "eth_requestAccounts",
         })) as string[]
-        const accountState: AccountState = {
-          selectedAccount: accounts[0],
-          accounts,
-        }
-        dispatch(initializeAccounts(accountState))
-        dispatch(setAccountErrorMessage(""))
+        handleAccountsChanged(accounts)
       } catch (err) {
         console.error(err)
-        dispatch(setAccountErrorMessage("Cannot get accounts from Metamask"))
-        dispatch(initializeAccounts({ accounts: [], selectedAccount: "" }))
+        handleAccountsChanged([], err as ProviderRpcError)
+      }
+      try {
+        const chainId = (await ethereum.request({
+          method: "eth_chainId",
+        })) as string
+        handleChainChanged(chainId)
+      } catch (err) {
+        console.error(err)
+        handleChainChanged("", err as ProviderRpcError)
       }
       dispatch(setContextErrorMessage(""))
+      // Register events
+      ethereum.on("accountsChanged", handleAccountsChanged)
+      ethereum.on("chainChanged", handleChainChanged)
+      ethereum.on("connect", handleConnectChanged)
+      ethereum.on("disconnect", handleDisconnectChanged)
     } else {
       dispatch(setContextErrorMessage("Install MetaMask"))
       dispatch(setAccountErrorMessage(""))
       dispatch(initializeAccounts({ accounts: [], selectedAccount: "" }))
       dispatch(changeChain(""))
+      dispatch(changeConnected(false))
       dispatch(setChainErrorMessage(""))
     }
   }
-  const handleAccountsChanged = (accounts: string[]) => {
+  const handleAccountsChanged = (accounts: string[], error?: ProviderRpcError) => {
     console.log("aem accounts changed", accounts)
-    const accountState: AccountState =
-      accounts.length > 0
-        ? {
-            selectedAccount: accounts[0],
-            accounts,
-          }
-        : { selectedAccount: "", accounts: [] }
-    dispatch(initializeAccounts(accountState))
+    if (error) {
+      dispatch(setAccountErrorMessage(`Cannot get accounts from Metamask ${error.message}`))
+      dispatch(initializeAccounts({ accounts: [], selectedAccount: "" }))
+    } else {
+      const accountState: AccountState =
+        accounts.length > 0
+          ? {
+              selectedAccount: accounts[0],
+              accounts,
+            }
+          : { selectedAccount: "", accounts: [] }
+      dispatch(initializeAccounts(accountState))
+      dispatch(setAccountErrorMessage(""))
+    }
   }
-  const handleChainChanged = (chainId: string) => {
+  const handleChainChanged = (chainId: string, error?: ProviderRpcError) => {
     console.log("aem chain changed", chainId)
-    dispatch(changeChain(chainId))
+    if (chainId) {
+      dispatch(changeChain(chainId))
+      if (window.ethereum && window.ethereum.isConnected()) {
+        dispatch(changeConnected(true))
+        dispatch(setChainErrorMessage(""))
+      } else {
+        dispatch(changeConnected(false))
+      }
+    } else {
+      dispatch(changeChain(""))
+      dispatch(changeConnected(false))
+      dispatch(setChainErrorMessage(error && error.message ? error.message : "Disconnected from chain"))
+    }
+  }
+
+  const handleConnectChanged = (connectInfo: ConnectInfo) => {
+    console.log("aem connect changed", connectInfo)
+    console.error(connectInfo)
+    handleChainChanged(connectInfo.chainId)
+  }
+
+  const handleDisconnectChanged = (error: ProviderRpcError) => {
+    console.error(error)
+
+    handleChainChanged("")
   }
   useEffect(() => {
-    if (window.ethereum) {
-      const { ethereum } = window
-      ethereum.on("accountsChanged", handleAccountsChanged)
-      ethereum.on("chainChanged", handleChainChanged)
-
-      return () => {
-        // cleanup logic
-        ethereum.removeListener("accountsChanged", handleAccountsChanged)
-        ethereum.removeListener("chainChanged", handleChainChanged)
+    console.log("useEffect fired")
+    connect()
+    return () => {
+      // cleanup logic
+      if (window.ethereum) {
+        window.ethereum.removeListener("accountsChanged", handleAccountsChanged)
+        window.ethereum.removeListener("chainChanged", handleChainChanged)
+        window.ethereum.removeListener("connect", handleConnectChanged)
+        window.ethereum.removeListener("disconnect", handleDisconnectChanged)
       }
     }
   })

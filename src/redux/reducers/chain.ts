@@ -4,6 +4,7 @@ import { ChainStateReducer } from "../../models"
 
 const initialState: ChainStateReducer = {
   value: "",
+  connected: false,
   errorMessage: "",
 }
 
@@ -14,12 +15,16 @@ export const chainSlice = createSlice({
     changeChain: (state, action: PayloadAction<string>) => {
       state.value = action.payload
     },
+    changeConnected: (state, action: PayloadAction<boolean>) => {
+      state.connected = action.payload
+    },
+
     setErrorMessage: (state, action: PayloadAction<string>) => {
       state.errorMessage = action.payload
     },
   },
 })
 
-export const { changeChain, setErrorMessage: setChainErrorMessage } = chainSlice.actions
+export const { changeChain, changeConnected, setErrorMessage: setChainErrorMessage } = chainSlice.actions
 
 export default chainSlice.reducer

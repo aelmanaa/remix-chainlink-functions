@@ -16,14 +16,17 @@ export const Networks = () => {
   const [busy, setBusy] = React.useState<boolean>(false)
   const [connected, setConnected] = React.useState<boolean>(false)
   */
+  const selectedChain = useSelector((state: RootState) => state.chain.value)
+  const connected = useSelector((state: RootState) => state.chain.connected)
   const errorMessage = useSelector((state: RootState) => state.chain.errorMessage)
-  const network = supportedNetworks[0]
+  const network = selectedChain
   const busy = true
-  const connected = true
 
   const connect = async (selectedNetwork: string) => {
     console.log("selectedNetwork", selectedNetwork)
   }
+
+  console.log("aem network.tsx connected", connected)
 
   /*
   const connect = async (selectedNetwork: string) => {
@@ -60,7 +63,10 @@ export const Networks = () => {
   return (
     <Form.Group>
       <Form.Text className="text-muted">
-        <small>NETWORK</small>
+        <small>NETWORK </small>
+      </Form.Text>
+      <Form.Text className="text-muted">
+        <small>{selectedChain}</small>
       </Form.Text>
       <Form.Control
         as="select"
@@ -78,6 +84,7 @@ export const Networks = () => {
       <Button variant="warning" size="sm" disabled={busy || connected} onClick={() => connect(network)}>
         <small>Connect</small>
       </Button>
+      <Form.Check disabled type="switch" label="connected" checked={connected} />
       {errorMessage ? <Alert variant="danger">{errorMessage}</Alert> : ""}
     </Form.Group>
   )
