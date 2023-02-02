@@ -3,3 +3,5 @@ export interface ChainStateReducer {
   connected: boolean
   errorMessage: string
 }
+
+export type SUPPORTED_CHAINS = "POLYGON_MUMBAI" | "ETHEREUM_GOERLI"
