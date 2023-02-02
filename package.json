@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@chainlink/contracts": "0.6.1",
+    "@reduxjs/toolkit": "^1.9.2",
     "@remixproject/plugin": "^0.3.31",
     "@remixproject/plugin-api": "^0.3.31",
     "@remixproject/plugin-webview": "^0.3.31",
@@ -15,21 +17,22 @@
     "@types/react-dom": "^18.0.10",
     "bootstrap": "^5.2.3",
     "buffer": "^6.0.3",
-    "copy-to-clipboard": "^3.3.3",
     "ethers": "^5.7.2",
     "react": "^18.2.0",
     "react-bootstrap": "^2.7.0",
+    "react-copy-to-clipboard": "^5.1.0",
     "react-dom": "^18.2.0",
+    "react-redux": "^8.0.5",
     "react-scripts": "5.0.1",
-    "rxjs": "^7.8.0",
-    "typescript": "^4.9.4",
+    "redux": "^4.2.1",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "postinstall": "./scripts/fetch-abis.sh"
   },
   "eslintConfig": {
     "extends": [
@@ -48,5 +51,22 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@typechain/ethers-v5": "^10.2.0",
+    "@types/react-copy-to-clipboard": "^5.0.4",
+    "@typescript-eslint/eslint-plugin": "^5.50.0",
+    "@typescript-eslint/parser": "^5.50.0",
+    "eslint": "^8.33.0",
+    "eslint-config-prettier": "^8.6.0",
+    "eslint-config-react-app": "^7.0.1",
+    "eslint-config-standard": "^17.0.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-n": "^15.6.1",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-promise": "^6.1.1",
+    "prettier": "^2.8.3",
+    "typechain": "^8.1.1",
+    "typescript": "^4.9.5"
   }
 }

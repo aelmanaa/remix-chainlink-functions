@@ -1,0 +1,7 @@
+{
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "editor.formatOnSave": true,
+  "eslint.enable": true,
+  "eslint.validate": ["javascript", "typescript"],
+  "eslint.alwaysShowStatus": true
+}
