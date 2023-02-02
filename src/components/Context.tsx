@@ -9,7 +9,7 @@ import {
   setChainErrorMessage,
   setContextErrorMessage,
 } from "../redux/reducers"
-import { Account, Networks } from "."
+import { Account, Networks, Balance } from "."
 import { AccountState, ConnectInfo, ProviderRpcError } from "../models"
 import { RootState } from "../redux/store"
 
@@ -117,6 +117,7 @@ export const Context = () => {
       {errorMessage ? <Alert variant="danger">{errorMessage}</Alert> : ""}
       <Account />
       <Networks />
+      <Balance />
     </div>
   )
 }
