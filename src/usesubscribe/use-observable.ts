@@ -1,32 +1,18 @@
-import { useState, useEffect } from "react";
-import { Subscribable, BehaviorSubject, Observable, Subject, Observer } from 'rxjs'
+import { useState, useEffect } from "react"
+import { Subscribable, BehaviorSubject, Observable, Subject, Observer } from "rxjs"
 
-export const useSubscribable = <T>(
-  s: Subscribable<T>, 
-  defaultValue?: T
-) => {
-  const [ value, setValue ] = useState(defaultValue);
-  useEffect(
-    () => {
-      const subscription = s.subscribe((setValue as Partial<Observer<T>>));
-      return () => subscription.unsubscribe();
-    },
-    [s]
-  );
-  return value;
-};
+export const useSubscribable = <T>(s: Subscribable<T>, defaultValue?: T) => {
+  const [value, setValue] = useState(defaultValue)
+  useEffect(() => {
+    const subscription = s.subscribe(setValue as Partial<Observer<T>>)
+    return () => subscription.unsubscribe()
+  }, [s])
+  return value
+}
 export const useRx = useSubscribable
 
-export const useObservable = <T>(
-  o: Observable<T>, 
-  defaultValue?: T
-) => useSubscribable(o, defaultValue)
+export const useObservable = <T>(o: Observable<T>, defaultValue?: T) => useSubscribable(o, defaultValue)
 
-export const useSubject = <T>(
-  s: Subject<T>, 
-  defaultValue?: T
-) => useSubscribable(s, defaultValue)
+export const useSubject = <T>(s: Subject<T>, defaultValue?: T) => useSubscribable(s, defaultValue)
 
-export const useBehaviorSubject = <T>(
-  s: BehaviorSubject<T>, 
-) => useSubscribable(s, s.value)
+export const useBehaviorSubject = <T>(s: BehaviorSubject<T>) => useSubscribable(s, s.value)

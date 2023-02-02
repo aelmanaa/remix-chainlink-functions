@@ -1,0 +1,10 @@
+.tmp
+dist
+build
+.cache
+.test
+node_modules
+.github
+.changeset
+package.json
+package-lock.json
