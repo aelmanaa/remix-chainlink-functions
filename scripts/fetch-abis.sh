@@ -8,7 +8,7 @@ if [ ! -d "${node_modules_path}" ]; then
     echo "${node_modules_path} does not exist."
     exit 1
 fi
-abis_path="../abis"
+abis_path="../src/abis"
 if [ ! -d "${abis_path}" ]; then
     echo "${abis_path} does not exist. Create abis folder"
     mkdir ${abis_path}
@@ -16,7 +16,7 @@ fi
 
 rm -rf "${abis_path:?}"/*
 
-types_path="../types-abis"
+types_path="../src/types-abis"
 if [ ! -d "${types_path}" ]; then
     echo "${types_path} does not exist. Create types folder"
     mkdir ${types_path}
@@ -24,7 +24,7 @@ fi
 
 rm -rf "${types_path:?}"/*
 
-node_modules=("@chainlink/contracts/abi/v0.8/LinkTokenInterface.json" "@chainlink/contracts/abi/v0.8/FunctionsBillingRegistryInterface.json" "@chainlink/contracts/abi/v0.8/FunctionsOracleInterface.json")
+node_modules=("@chainlink/contracts/abi/v0.4/LinkToken.json" "@chainlink/contracts/abi/v0.8/FunctionsBillingRegistry.json" "@chainlink/contracts/abi/v0.8/FunctionsOracle.json")
 
 echo "fetch abis from node_modules"
 failed="false"
