@@ -4,4 +4,5 @@ export interface ChainStateReducer {
   errorMessage: string
 }
 
-export type SUPPORTED_CHAINS = "POLYGON_MUMBAI" | "ETHEREUM_GOERLI"
+export const supportedChains = ["POLYGON_MUMBAI", "ETHEREUM_GOERLI"] as const
+export type SUPPORTED_CHAIN = (typeof supportedChains)[number]

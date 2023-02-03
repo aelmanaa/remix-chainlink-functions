@@ -3,9 +3,16 @@ import { Table } from "react-bootstrap"
 import { useSelector, useDispatch } from "react-redux"
 import { RootState } from "../redux/store"
 import { changeLinkBalance, changeNativeBalance } from "../redux/reducers"
-import { BigNumberish, ethers, utils } from "ethers"
+import { BigNumberish, utils } from "ethers"
 import { chainsData, reverseChainLookup, networksData } from "../data"
-import { LinkTokenFactory } from "../utils"
+import {
+  clearLinkEvents,
+  clearNativeBalanceEvent,
+  getLinkBalance,
+  getNativeBalance,
+  registerLinkEvent,
+  registerNativeBalanceEvent,
+} from "../utils"
 
 export const Balance = () => {
   const dispatch = useDispatch()
@@ -17,53 +24,40 @@ export const Balance = () => {
 
   useEffect(() => {
     const getBalance = async () => {
-      if (selectedAccount && connected) {
-        const { ethereum } = window
-
-        try {
-          const ethBalance = (await ethereum.request({
-            method: "eth_getBalance",
-            params: [selectedAccount, "latest"],
-          })) as BigNumberish
-          console.log("aem ethBalance", ethBalance)
-          dispatch(changeNativeBalance(ethBalance))
-        } catch (err) {
-          console.error(err)
-          dispatch(changeNativeBalance(0))
-        }
-        try {
-          const provider = new ethers.providers.Web3Provider(ethereum)
-          const linkToken = LinkTokenFactory.connect(networksData[reverseChainLookup[chain]].linkToken, provider)
-          const linkBalance = await linkToken.balanceOf(selectedAccount)
-          console.log("aem linkBalance", linkBalance)
-          dispatch(changeLinkBalance(linkBalance.toHexString()))
-
-          /** 
-          linkToken.queryFilter(linkToken.filters["Transfer(address,address,uint256)"](), (...data) => {
-            console.log(data)
-          })
-          */
-
-          linkToken.on("Transfer(address,address,uint256)", (from, to, value) => {
-            console.log(from, to, value)
-          })
-        } catch (err) {
-          console.error(err)
-          dispatch(changeLinkBalance(0))
-        }
-      } else {
+      try {
+        const ethBalance = await getNativeBalance(selectedAccount)
+        dispatch(changeNativeBalance(ethBalance))
+      } catch (err) {
+        console.error(err)
         dispatch(changeNativeBalance(0))
+      }
+      try {
+        const linkBalance = await getLinkBalance(selectedAccount, networksData[reverseChainLookup[chain]].linkToken)
+        dispatch(changeLinkBalance(linkBalance.toHexString()))
+      } catch (err) {
+        console.error(err)
         dispatch(changeLinkBalance(0))
       }
     }
-    getBalance()
-    return () => {
-      // cleanup logic
-      if (window.ethereum) {
-        const provider = new ethers.providers.Web3Provider(window.ethereum)
-        const linkToken = LinkTokenFactory.connect(networksData[reverseChainLookup[chain]].linkToken, provider)
-        linkToken.removeAllListeners()
+    if (selectedAccount && connected) {
+      getBalance()
+      registerLinkEvent(
+        selectedAccount,
+        networksData[reverseChainLookup[chain]].linkToken,
+        (linkBalance: BigNumberish) => {
+          dispatch(changeLinkBalance(linkBalance))
+        }
+      )
+      const nativeBalanceListner = registerNativeBalanceEvent(selectedAccount, (nativeBalance: BigNumberish) => {
+        dispatch(changeNativeBalance(nativeBalance))
+      })
+      return () => {
+        clearLinkEvents(networksData[reverseChainLookup[chain]].linkToken)
+        clearNativeBalanceEvent(nativeBalanceListner)
       }
+    } else {
+      dispatch(changeNativeBalance(0))
+      dispatch(changeLinkBalance(0))
     }
   }, [dispatch, selectedAccount, connected, chain])
 

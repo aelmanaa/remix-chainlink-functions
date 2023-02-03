@@ -1,4 +1,4 @@
-import { SUPPORTED_CHAINS } from "."
+import { SUPPORTED_CHAIN } from "."
 
 interface CHAIN_DATA {
   chainId: string
@@ -13,9 +13,9 @@ interface NETWORK_DATA {
   functionsPublicKey: string
 }
 
-export type CHAINS_DATA = Record<SUPPORTED_CHAINS, CHAIN_DATA>
-export type REVERSE_CHAIN_LOOKUP = Record<string, SUPPORTED_CHAINS>
-export type NETWORKS_DATA = Record<SUPPORTED_CHAINS, NETWORK_DATA>
+export type CHAINS_DATA = Record<SUPPORTED_CHAIN, CHAIN_DATA>
+export type REVERSE_CHAIN_LOOKUP = Record<string, SUPPORTED_CHAIN>
+export type NETWORKS_DATA = Record<SUPPORTED_CHAIN, NETWORK_DATA>
 
 /**
  * 
