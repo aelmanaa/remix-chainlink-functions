@@ -1,10 +1,12 @@
 {
   "POLYGON_MUMBAI": {
     "chainId": "0x13881",
-    "name": "Polygon Mumbai"
+    "name": "Polygon Mumbai",
+    "native": "MATIC"
   },
   "ETHEREUM_GOERLI": {
     "chainId": "0x5",
-    "name": "Ethereum Goerli"
+    "name": "Ethereum Goerli",
+    "native": "ETH"
   }
 }

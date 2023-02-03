@@ -1,22 +1,21 @@
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { Table } from "react-bootstrap"
-import { useSelector } from "react-redux"
+import { useSelector, useDispatch } from "react-redux"
 import { RootState } from "../redux/store"
-import { utils } from "ethers"
+import { changeNativeBalance } from "../redux/reducers"
+import { BigNumberish, utils } from "ethers"
+import { chainsData, reverseChainLookup } from "../data"
 
 export const Balance = () => {
+  const dispatch = useDispatch()
   const selectedAccount = useSelector((state: RootState) => state.account.value.selectedAccount)
   const connected = useSelector((state: RootState) => state.chain.connected)
-  // TODO
-  const [balance, setBalance] = useState({
-    eth: "",
-    link: "",
-  })
+  const chain = useSelector((state: RootState) => state.chain.value)
+  const chainKey = reverseChainLookup[chain]
+  const balance = useSelector((state: RootState) => state.balance)
 
   useEffect(() => {
-    console.log("aem useEffect Balance fired")
     const getBalance = async () => {
-      console.log("getBalance IN")
       if (selectedAccount && connected) {
         const { ethereum } = window
 
@@ -24,19 +23,19 @@ export const Balance = () => {
           const ethBalance = (await ethereum.request({
             method: "eth_getBalance",
             params: [selectedAccount, "latest"],
-          })) as string
+          })) as BigNumberish
           console.log("aem ethBalance", ethBalance)
-          setBalance({ eth: ethBalance, link: "" })
+          dispatch(changeNativeBalance(ethBalance))
         } catch (err) {
           console.error(err)
-          setBalance({ eth: "", link: "" })
+          dispatch(changeNativeBalance(0))
         }
       } else {
-        setBalance({ eth: "", link: "" })
+        dispatch(changeNativeBalance(0))
       }
     }
     getBalance()
-  }, [selectedAccount, connected])
+  }, [dispatch, selectedAccount, connected, chain])
 
   return (
     <Table striped bordered hover size="sm">
@@ -50,8 +49,11 @@ export const Balance = () => {
       <tbody>
         <tr>
           <td>Current Balance</td>
-          <td>{balance.eth ? (+utils.formatEther(balance.eth)).toFixed(2) : 0} ETH</td>
-          <td>{balance.link}</td>
+          <td>
+            {balance.native ? (+utils.formatEther(balance.native)).toFixed(2) : 0}{" "}
+            {chainKey ? chainsData[chainKey].native : ""}
+          </td>
+          <td>{balance.link ? balance.link.toString() : ""}</td>
         </tr>
       </tbody>
     </Table>

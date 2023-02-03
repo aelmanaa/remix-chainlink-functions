@@ -3,6 +3,7 @@ import { SUPPORTED_CHAINS } from "."
 interface CHAIN_DATA {
   chainId: string
   name: string
+  native: string
 }
 
 interface NETWORK_DATA {
