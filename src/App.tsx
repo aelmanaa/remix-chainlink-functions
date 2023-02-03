@@ -7,7 +7,7 @@ const App = () => {
   return (
     <div className="App">
       <Context />
-      <div>Select a contract, compile it</div>
+      <div>Compile a contract..</div>
     </div>
   )
 }

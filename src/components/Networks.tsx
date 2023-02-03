@@ -1,33 +1,41 @@
-import { Form, Alert, Button } from "react-bootstrap"
-import { useSelector } from "react-redux"
+import { Form, Alert } from "react-bootstrap"
+import { useSelector, useDispatch } from "react-redux"
 import { RootState } from "../redux/store"
-import { chainNameFromChainId, chainNameFromChainKey } from "../utils"
-import { supportedChains } from "../models"
+import { chainNameFromChainKey, switchChain } from "../utils"
+import { supportedChains, SUPPORTED_CHAIN } from "../models"
+import { changeChain } from "../redux/reducers"
+import { useEffect } from "react"
+import { chainsData } from "../data"
 
 export const Networks = () => {
+  const dispatch = useDispatch()
   const selectedAccount = useSelector((state: RootState) => state.account.value.selectedAccount)
-  const selectedChain = useSelector((state: RootState) => state.chain.value)
-  const connected = useSelector((state: RootState) => state.chain.connected)
+  const chain = useSelector((state: RootState) => state.chain.chain)
+  const connected = useSelector((state: RootState) => state.chain.chainConnected)
   const errorMessage = useSelector((state: RootState) => state.chain.errorMessage)
+
+  useEffect(() => {
+    switchChain(chainsData[chain].chainId)
+  }, [chain])
 
   return (
     <Form.Group>
       <Form.Text className="text-muted">Connected Network: </Form.Text>
-      <Form.Text className="text-muted">{chainNameFromChainId(selectedChain)}</Form.Text>
+      <Form.Text className="text-muted">{chain}</Form.Text>
       <Form.Check disabled type="switch" checked={connected && !!selectedAccount} />
       <Form.Select
         size="sm"
-        value={chainNameFromChainId(selectedChain)}
         onChange={(event) => {
           event.preventDefault()
           const selectedIndex = event.target.options.selectedIndex
-          console.log("aem networks changed", selectedIndex)
+          const chain = event.target.options[selectedIndex].getAttribute("data-key") as SUPPORTED_CHAIN
           console.log(event.target.options[selectedIndex].getAttribute("data-key"))
+          dispatch(changeChain(chain))
         }}
       >
         {supportedChains.map((opt) => {
           return (
-            <option key={opt} data-key={opt}>
+            <option selected={opt === chain} key={opt} data-key={opt}>
               {chainNameFromChainKey(opt)}
             </option>
           )

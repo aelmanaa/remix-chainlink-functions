@@ -16,7 +16,6 @@ export const registerNativeBalanceEvent = (account: string, handler: (balance: B
     for (const transaction of transactions) {
       if (compareAccounts(transaction.from, account) || compareAccounts(transaction.to || "", account)) {
         const nativeBalance = await getNativeBalance(account)
-        console.log("aem NATIVE BALANCE", account, transaction.from, transaction.to)
         handler(nativeBalance)
       }
     }
@@ -42,15 +41,11 @@ export const registerLinkEvent = async (
   linkTokenAddress: string,
   handler: (balance: BigNumberish) => void
 ) => {
-  console.log("aem registerLinkEvent")
   const provider = new ethers.providers.Web3Provider(window.ethereum)
   const linkToken = LinkTokenFactory.connect(linkTokenAddress, provider)
   linkToken.on("Transfer(address,address,uint256)", async (from, to, value, event) => {
     if (compareAccounts(from, account) || compareAccounts(to, account)) {
-      console.log("aem LINK TRANSFER on", account, from, to)
-      console.log(event)
       const linkBalance = await getLinkBalance(account, linkTokenAddress)
-      console.log("aem dispatch update link balance")
       handler(linkBalance.toHexString())
     }
   })

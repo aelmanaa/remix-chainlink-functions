@@ -1,6 +1,6 @@
 export interface ChainStateReducer {
-  value: string
-  connected: boolean
+  chain: SUPPORTED_CHAIN
+  chainConnected: boolean
   errorMessage: string
 }
 

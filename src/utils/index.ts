@@ -1,4 +1,6 @@
 export * from "./abi"
 export * from "./factory"
 export * from "./balance"
+export * from "./chain"
+export * from "./account"
 export * from "./format"

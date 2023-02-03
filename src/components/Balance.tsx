@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from "react-redux"
 import { RootState } from "../redux/store"
 import { changeLinkBalance, changeNativeBalance } from "../redux/reducers"
 import { BigNumberish, utils } from "ethers"
-import { chainsData, reverseChainLookup, networksData } from "../data"
+import { chainsData, networksData } from "../data"
 import {
   clearLinkEvents,
   clearNativeBalanceEvent,
@@ -17,9 +17,8 @@ import {
 export const Balance = () => {
   const dispatch = useDispatch()
   const selectedAccount = useSelector((state: RootState) => state.account.value.selectedAccount)
-  const connected = useSelector((state: RootState) => state.chain.connected)
-  const chain = useSelector((state: RootState) => state.chain.value)
-  const chainKey = reverseChainLookup[chain]
+  const connected = useSelector((state: RootState) => state.chain.chainConnected)
+  const chain = useSelector((state: RootState) => state.chain.chain)
   const balance = useSelector((state: RootState) => state.balance)
 
   useEffect(() => {
@@ -32,7 +31,7 @@ export const Balance = () => {
         dispatch(changeNativeBalance(0))
       }
       try {
-        const linkBalance = await getLinkBalance(selectedAccount, networksData[reverseChainLookup[chain]].linkToken)
+        const linkBalance = await getLinkBalance(selectedAccount, networksData[chain].linkToken)
         dispatch(changeLinkBalance(linkBalance.toHexString()))
       } catch (err) {
         console.error(err)
@@ -41,18 +40,14 @@ export const Balance = () => {
     }
     if (selectedAccount && connected) {
       getBalance()
-      registerLinkEvent(
-        selectedAccount,
-        networksData[reverseChainLookup[chain]].linkToken,
-        (linkBalance: BigNumberish) => {
-          dispatch(changeLinkBalance(linkBalance))
-        }
-      )
+      registerLinkEvent(selectedAccount, networksData[chain].linkToken, (linkBalance: BigNumberish) => {
+        dispatch(changeLinkBalance(linkBalance))
+      })
       const nativeBalanceListner = registerNativeBalanceEvent(selectedAccount, (nativeBalance: BigNumberish) => {
         dispatch(changeNativeBalance(nativeBalance))
       })
       return () => {
-        clearLinkEvents(networksData[reverseChainLookup[chain]].linkToken)
+        clearLinkEvents(networksData[chain].linkToken)
         clearNativeBalanceEvent(nativeBalanceListner)
       }
     } else {
@@ -75,7 +70,7 @@ export const Balance = () => {
           <td>Current Balance</td>
           <td>
             {balance.native ? (+utils.formatEther(balance.native)).toFixed(2) : 0}{" "}
-            {chainKey ? chainsData[chainKey].native : ""}
+            {chain ? chainsData[chain].native : ""}
           </td>
           <td>{balance.link ? (+utils.formatEther(balance.link)).toFixed(2) : 0} LINK</td>
         </tr>

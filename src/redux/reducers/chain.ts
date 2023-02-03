@@ -1,10 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit"
 import type { PayloadAction } from "@reduxjs/toolkit"
-import { ChainStateReducer } from "../../models"
+import { ChainStateReducer, SUPPORTED_CHAIN } from "../../models"
 
 const initialState: ChainStateReducer = {
-  value: "",
-  connected: false,
+  chain: "POLYGON_MUMBAI",
+  chainConnected: false,
   errorMessage: "",
 }
 
@@ -12,11 +12,11 @@ export const chainSlice = createSlice({
   name: "chain",
   initialState,
   reducers: {
-    changeChain: (state, action: PayloadAction<string>) => {
-      state.value = action.payload
+    changeChain: (state, action: PayloadAction<SUPPORTED_CHAIN>) => {
+      state.chain = action.payload
     },
-    changeConnected: (state, action: PayloadAction<boolean>) => {
-      state.connected = action.payload
+    changeChainConnected: (state, action: PayloadAction<boolean>) => {
+      state.chainConnected = action.payload
     },
 
     setErrorMessage: (state, action: PayloadAction<string>) => {
@@ -25,6 +25,6 @@ export const chainSlice = createSlice({
   },
 })
 
-export const { changeChain, changeConnected, setErrorMessage: setChainErrorMessage } = chainSlice.actions
+export const { changeChain, changeChainConnected, setErrorMessage: setChainErrorMessage } = chainSlice.actions
 
 export default chainSlice.reducer

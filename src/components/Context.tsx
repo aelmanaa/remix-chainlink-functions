@@ -3,95 +3,63 @@ import { Alert } from "react-bootstrap"
 import { useDispatch, useSelector } from "react-redux"
 import {
   initializeAccounts,
-  changeChain,
-  changeConnected,
+  changeChainConnected,
   setAccountErrorMessage,
   setChainErrorMessage,
   setContextErrorMessage,
 } from "../redux/reducers"
 import { Account, Networks, Balance } from "."
-import { AccountState, ConnectInfo, ProviderRpcError } from "../models"
+import { ConnectInfo, ProviderRpcError } from "../models"
 import { RootState } from "../redux/store"
+import { getAccounts, getChain, handleAccountsChanged, handleChainChanged } from "../utils"
 
 export const Context = () => {
   const dispatch = useDispatch()
   const errorMessage = useSelector((state: RootState) => state.context.errorMessage)
   useEffect(() => {
-    const handleAccountsChanged = (accounts: string[], error?: ProviderRpcError) => {
-      if (error) {
-        dispatch(setAccountErrorMessage(`Cannot get accounts from Metamask ${error.message}`))
-        dispatch(initializeAccounts({ accounts: [], selectedAccount: "" }))
-      } else {
-        const accountState: AccountState =
-          accounts.length > 0
-            ? {
-                selectedAccount: accounts[0],
-                accounts,
-              }
-            : { selectedAccount: "", accounts: [] }
-        dispatch(initializeAccounts(accountState))
-        dispatch(setAccountErrorMessage(""))
-      }
-    }
-    const handleChainChanged = (chainId: string, error?: ProviderRpcError) => {
-      if (chainId) {
-        dispatch(changeChain(chainId))
-        if (window.ethereum && window.ethereum.isConnected()) {
-          dispatch(changeConnected(true))
-          dispatch(setChainErrorMessage(""))
-        } else {
-          dispatch(changeConnected(false))
-        }
-      } else {
-        dispatch(changeChain(""))
-        dispatch(changeConnected(false))
-        dispatch(setChainErrorMessage(error && error.message ? error.message : "Disconnected from chain"))
-      }
+    const chainConnectHandler = (connectInfo: ConnectInfo) => {
+      handleChainChanged(connectInfo.chainId, dispatch)
     }
 
-    const handleConnectChanged = (connectInfo: ConnectInfo) => {
-      handleChainChanged(connectInfo.chainId)
+    const chainDisconnectHandler = (error: ProviderRpcError) => {
+      handleChainChanged("", dispatch, error)
     }
 
-    const handleDisconnectChanged = (error: ProviderRpcError) => {
-      console.error(error)
+    const chainHandler = (chainId: string) => {
+      handleChainChanged(chainId, dispatch)
+    }
 
-      handleChainChanged("")
+    const accountsHandler = (accounts: string[]) => {
+      handleAccountsChanged(accounts, dispatch)
     }
     const connect = async () => {
       if (window.ethereum) {
         const { ethereum } = window
-
         try {
-          const accounts = (await ethereum.request({
-            method: "eth_requestAccounts",
-          })) as string[]
-          handleAccountsChanged(accounts)
+          const accounts = await getAccounts()
+          handleAccountsChanged(accounts, dispatch)
         } catch (err) {
           console.error(err)
-          handleAccountsChanged([], err as ProviderRpcError)
+          handleAccountsChanged([], dispatch, err as ProviderRpcError)
         }
         try {
-          const chainId = (await ethereum.request({
-            method: "eth_chainId",
-          })) as string
-          handleChainChanged(chainId)
+          const chainId = await getChain()
+          handleChainChanged(chainId, dispatch)
         } catch (err) {
           console.error(err)
-          handleChainChanged("", err as ProviderRpcError)
+          handleChainChanged("", dispatch, err as ProviderRpcError)
         }
         dispatch(setContextErrorMessage(""))
         // Register events
-        ethereum.on("accountsChanged", handleAccountsChanged)
-        ethereum.on("chainChanged", handleChainChanged)
-        ethereum.on("connect", handleConnectChanged)
-        ethereum.on("disconnect", handleDisconnectChanged)
+        ethereum.on("accountsChanged", accountsHandler)
+        ethereum.on("chainChanged", chainHandler)
+        ethereum.on("connect", chainConnectHandler)
+        ethereum.on("disconnect", chainDisconnectHandler)
       } else {
         dispatch(setContextErrorMessage("Install MetaMask"))
         dispatch(setAccountErrorMessage(""))
         dispatch(initializeAccounts({ accounts: [], selectedAccount: "" }))
-        dispatch(changeChain(""))
-        dispatch(changeConnected(false))
+        dispatch(changeChainConnected(false))
         dispatch(setChainErrorMessage(""))
       }
     }
@@ -99,10 +67,10 @@ export const Context = () => {
     return () => {
       // cleanup logic
       if (window.ethereum) {
-        window.ethereum.removeListener("accountsChanged", handleAccountsChanged)
-        window.ethereum.removeListener("chainChanged", handleChainChanged)
-        window.ethereum.removeListener("connect", handleConnectChanged)
-        window.ethereum.removeListener("disconnect", handleDisconnectChanged)
+        window.ethereum.removeListener("accountsChanged", accountsHandler)
+        window.ethereum.removeListener("chainChanged", chainHandler)
+        window.ethereum.removeListener("connect", chainConnectHandler)
+        window.ethereum.removeListener("disconnect", chainDisconnectHandler)
       }
     }
   }, [dispatch])
