@@ -8,7 +8,7 @@ import {
   setChainErrorMessage,
   setContextErrorMessage,
 } from "../redux/reducers"
-import { Account, Networks, Balance } from "."
+import { Account, Networks, Balance } from "./context-comp"
 import { ConnectInfo, ProviderRpcError } from "../models"
 import { RootState } from "../redux/store"
 import { getAccounts, getChain, handleAccountsChanged, handleChainChanged } from "../utils"

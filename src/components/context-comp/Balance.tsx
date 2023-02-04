@@ -1,10 +1,10 @@
 import { useEffect } from "react"
 import { Table } from "react-bootstrap"
 import { useSelector, useDispatch } from "react-redux"
-import { RootState } from "../redux/store"
-import { changeLinkBalance, changeNativeBalance } from "../redux/reducers"
+import { RootState } from "../../redux/store"
+import { changeLinkBalance, changeNativeBalance } from "../../redux/reducers"
 import { BigNumberish, utils } from "ethers"
-import { chainsData, networksData } from "../data"
+import { chainsData, networksData } from "../../data"
 import {
   clearLinkEvents,
   clearNativeBalanceEvent,
@@ -12,7 +12,7 @@ import {
   getNativeBalance,
   registerLinkEvent,
   registerNativeBalanceEvent,
-} from "../utils"
+} from "../../utils"
 
 export const Balance = () => {
   const dispatch = useDispatch()

@@ -1,7 +1,7 @@
 import { Form, Alert } from "react-bootstrap"
 import { useSelector } from "react-redux"
-import { RootState } from "../redux/store"
-import { formatAddress } from "../utils"
+import { RootState } from "../../redux/store"
+import { formatAddress } from "../../utils"
 
 export const Account = () => {
   const selectedAccount = useSelector((state: RootState) => state.account.value.selectedAccount)

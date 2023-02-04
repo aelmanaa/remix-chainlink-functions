@@ -1,5 +1,5 @@
 import "./App.css"
-import { Context } from "./components"
+import { Context, Plugin } from "./components"
 
 // export const client = new FunctionsPlugin();
 
@@ -7,7 +7,8 @@ const App = () => {
   return (
     <div className="App">
       <Context />
-      <div>Compile a contract..</div>
+      <hr className="rounded" />
+      <Plugin />
     </div>
   )
 }

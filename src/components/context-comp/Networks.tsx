@@ -1,11 +1,11 @@
 import { Form, Alert } from "react-bootstrap"
 import { useSelector, useDispatch } from "react-redux"
-import { RootState } from "../redux/store"
-import { chainNameFromChainKey, switchChain } from "../utils"
-import { supportedChains, SUPPORTED_CHAIN } from "../models"
-import { changeChain } from "../redux/reducers"
+import { RootState } from "../../redux/store"
+import { chainNameFromChainKey, switchChain } from "../../utils"
+import { supportedChains, SUPPORTED_CHAIN } from "../../models"
+import { changeChain } from "../../redux/reducers"
 import { useEffect } from "react"
-import { chainsData } from "../data"
+import { chainsData } from "../../data"
 
 export const Networks = () => {
   const dispatch = useDispatch()
