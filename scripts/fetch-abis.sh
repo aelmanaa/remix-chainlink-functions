@@ -25,6 +25,7 @@ fi
 rm -rf "${types_path:?}"/*
 
 node_modules=("@chainlink/contracts/abi/v0.4/LinkToken.json" "@chainlink/contracts/abi/v0.8/FunctionsBillingRegistry.json" "@chainlink/contracts/abi/v0.8/FunctionsOracle.json")
+https=("https://raw.githubusercontent.com/aelmanaa/ocr2dr-hardhat-starter-kit/remix-samples/remix-samples/abis/FunctionsConsumer.json")
 
 echo "fetch abis from node_modules"
 failed="false"
@@ -38,6 +39,16 @@ for file in "${node_modules[@]}"; do
         failed="true"
     fi
 done
+for file in "${https[@]}"; do
+    echo "fetch ${file}"
+    if [ -n "${file}" ]; then
+        curl "${file}" --output "${abis_path}"
+    else
+        echo "${file} does not exist."
+        failed="true"
+    fi
+done
+
 if [ "${failed}" == "true" ]; then
     echo "Some abis could not be fetch. check logs!"
     exit 2
