@@ -41,10 +41,15 @@ for file in "${node_modules[@]}"; do
 done
 for file in "${https[@]}"; do
     echo "fetch ${file}"
-    if [ -n "${file}" ]; then
-        curl "${file}" --output "${abis_path}"
+    fileName=$(echo "${file}" | grep -Eo '[a-zA-Z0-9]+\.json')
+    if [ -n "${fileName}" ]; then
+        http_response=$(curl -s -o "${abis_path}/${fileName}" -w "%{http_code}" "${file}")
+        if [ "${http_response}" -gt "399" ]; then
+            echo "${file} not fetched. ${http_response}"
+            failed="true"
+        fi
     else
-        echo "${file} does not exist."
+        echo "File not an abi ${fileName}"
         failed="true"
     fi
 done
