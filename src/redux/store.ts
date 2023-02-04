@@ -1,5 +1,5 @@
 import { configureStore } from "@reduxjs/toolkit"
-import { accountReducer, chainReducer, contextReducer, balanceReducer } from "./reducers"
+import { accountReducer, chainReducer, contextReducer, balanceReducer, remixReducer } from "./reducers"
 
 export const store = configureStore({
   reducer: {
@@ -7,6 +7,7 @@ export const store = configureStore({
     chain: chainReducer,
     balance: balanceReducer,
     context: contextReducer,
+    remix: remixReducer,
   },
 })
 
