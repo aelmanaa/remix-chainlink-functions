@@ -1,6 +1,6 @@
 import { AnyAction, Dispatch } from "redux"
 import { ProviderRpcError } from "../models"
-import { changeChain, changeChainConnected, setChainErrorMessage } from "../redux/reducers"
+import { changeChain, changeChainConnected, setChainErrorMessage, setFunctionsConsumerAddress } from "../redux/reducers"
 import { reverseChainLookup } from "../data"
 
 export const getChain = async () => {
@@ -19,6 +19,7 @@ export const switchChain = async (chainId: string) => {
 export const handleChainChanged = (chainId: string, dispatch: Dispatch<AnyAction>, error?: ProviderRpcError) => {
   if (chainId) {
     dispatch(changeChain(reverseChainLookup[chainId]))
+    dispatch(setFunctionsConsumerAddress(""))
     if (window.ethereum && window.ethereum.isConnected()) {
       dispatch(changeChainConnected(true))
       dispatch(setChainErrorMessage(""))

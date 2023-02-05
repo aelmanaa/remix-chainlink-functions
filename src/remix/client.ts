@@ -1,6 +1,6 @@
 import { PluginClient } from "@remixproject/plugin"
 import { createClient } from "@remixproject/plugin-webview"
-import { COMPILED_FILE, READ_DIR_RESPONSE } from "../models"
+import { COMPILED_FILE, LOG_TO_REMIX, READ_DIR_RESPONSE } from "../models"
 
 export class FunctionsPlugin extends PluginClient {
   private readonly pathSeperator = "/"
@@ -27,6 +27,10 @@ export class FunctionsPlugin extends PluginClient {
         // todo
         console.error(err)
       })
+  }
+
+  logToRemixTerminal: LOG_TO_REMIX = async (type, value) => {
+    await this.call("terminal", "log", { type, value })
   }
 
   removeAllListeners = async () => {

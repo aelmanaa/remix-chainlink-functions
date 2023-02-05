@@ -7,6 +7,7 @@ import {
   setAccountErrorMessage,
   setChainErrorMessage,
   setContextErrorMessage,
+  setFunctionsConsumerAddress,
 } from "../redux/reducers"
 import { Account, Networks, Balance } from "./context-comp"
 import { ConnectInfo, ProviderRpcError } from "../models"
@@ -61,6 +62,7 @@ export const Context = () => {
         dispatch(initializeAccounts({ accounts: [], selectedAccount: "" }))
         dispatch(changeChainConnected(false))
         dispatch(setChainErrorMessage(""))
+        dispatch(setFunctionsConsumerAddress(""))
       }
     }
     connect()
@@ -76,7 +78,7 @@ export const Context = () => {
   }, [dispatch])
   return (
     <div className="border-bottom">
-      {errorMessage ? <Alert variant="danger">{errorMessage}</Alert> : ""}
+      {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
       <Account />
       <Networks />
       <Balance />

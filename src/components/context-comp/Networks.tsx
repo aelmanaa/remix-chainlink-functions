@@ -43,7 +43,7 @@ export const Networks = () => {
           )
         })}
       </Form.Select>
-      {errorMessage ? <Alert variant="danger">{errorMessage}</Alert> : ""}
+      {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
     </Form.Group>
   )
 }

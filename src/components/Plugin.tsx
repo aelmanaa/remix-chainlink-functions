@@ -38,7 +38,7 @@ export const Plugin = () => {
         </Button>
       </div>
       <Solidity />
-      <Transaction />
+      <Transaction logToRemixTerminal={client.current.logToRemixTerminal} />
     </div>
   )
 }

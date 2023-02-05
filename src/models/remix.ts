@@ -16,3 +16,5 @@ export interface COMPILED_FILE {
   contracts: Record<string, COMPILED_CONTRACT>
   errors?: CompilationError[]
 }
+
+export type LOG_TO_REMIX = (type: "info" | "html" | "warn" | "error" | "log", value: string) => Promise<void>

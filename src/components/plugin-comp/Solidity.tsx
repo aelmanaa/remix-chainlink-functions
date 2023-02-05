@@ -66,8 +66,8 @@ export const Solidity = () => {
       </Form>
       {isError ? <h3>Compilation Errors</h3> : ""}
       {isError
-        ? errorMessages.map((message) => {
-            return <Form.Control plaintext readOnly defaultValue={message} />
+        ? errorMessages.map((message, index) => {
+            return <Form.Control key={`compilation_error_${index}`} plaintext readOnly defaultValue={message} />
           })
         : ""}
     </div>
