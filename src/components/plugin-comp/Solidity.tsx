@@ -1,35 +1,75 @@
-import Col from "react-bootstrap/Col"
 import Form from "react-bootstrap/Form"
-import Row from "react-bootstrap/Row"
-import { useSelector } from "react-redux"
+import { useSelector, useDispatch } from "react-redux"
+import { selectContract } from "../../redux/reducers"
 import { RootState } from "../../redux/store"
+import { errorsInFile } from "../../utils"
 
 export const Solidity = () => {
+  const dispatch = useDispatch()
   const compiledSolidityFiles = useSelector((state: RootState) => state.remix.compiledSolidityFiles)
   const solidityFiles = Object.keys(compiledSolidityFiles)
-  const errorMessage = ""
+
+  let compiled = false
+  let isError = false
+  let errorMessages: string[] = []
+
+  const refreshDisplayData = (selectedFile: string) => {
+    const file = compiledSolidityFiles[selectedFile]
+    const errors = errorsInFile(file)
+    compiled = file.compiled
+    isError = errors.isError
+    errorMessages = errors.errorMessages
+  }
+
   return (
-    <div>
-      <h2>Solidity</h2>
+    <div className="border-top border-bottom">
+      <h2>Compiler</h2>
       <Form>
-        <Row>
-          <Form.Select>
-            {solidityFiles.map((opt) => {
-              const contracts = compiledSolidityFiles[opt].contracts
-              return Object.keys(contracts).map((contract) => {
+        <Form.Group style={{ display: "flex", flexDirection: "row" }}>
+          <Form.Select
+            className="udapp_contractNames custom-select"
+            style={{ display: "block" }}
+            onChange={(event) => {
+              event.preventDefault()
+              const selectedIndex = event.target.options.selectedIndex
+              const key = event.target.options[selectedIndex].getAttribute("data-key") as string
+              const [fileName, contractName] = key.split("_+_")
+              refreshDisplayData(fileName)
+              dispatch(selectContract({ fileName, contractName }))
+            }}
+          >
+            {solidityFiles.map((fileName, index1) => {
+              if (index1 === 0) refreshDisplayData(fileName)
+              const compiledFile = compiledSolidityFiles[fileName]
+              const contracts = compiledFile.contracts
+              // errorsInFile
+              return Object.keys(contracts).map((contractName, index2) => {
+                if (index1 === 0 && index2 === 0) dispatch(selectContract({ fileName, contractName }))
                 return (
-                  <option key={opt + "_" + contract} data-key={opt + "_" + contract}>
-                    {contract}
+                  <option key={fileName + "_+_" + contractName} data-key={fileName + "_+_" + contractName}>
+                    {contractName}
                   </option>
                 )
               })
             })}
           </Form.Select>
-        </Row>
-        <Row>
-          <Form.Control plaintext readOnly defaultValue={errorMessage || "Compiled!"} />
-        </Row>
+          {compiled ? (
+            isError ? (
+              <Form.Control plaintext readOnly defaultValue="Compiled with errors!" />
+            ) : (
+              <Form.Control plaintext readOnly defaultValue="Compiled!" />
+            )
+          ) : (
+            ""
+          )}
+        </Form.Group>
       </Form>
+      {isError ? <h3>Compilation Errors</h3> : ""}
+      {isError
+        ? errorMessages.map((message) => {
+            return <Form.Control plaintext readOnly defaultValue={message} />
+          })
+        : ""}
     </div>
   )
 }

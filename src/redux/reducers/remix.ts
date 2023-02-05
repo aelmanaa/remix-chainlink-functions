@@ -1,13 +1,19 @@
 import { createSlice } from "@reduxjs/toolkit"
 import type { PayloadAction } from "@reduxjs/toolkit"
-import { COMPILED_CONTRACT } from "../../models"
+import { COMPILED_FILE } from "../../models"
 
 const initialCompiledSolidityFilesState: Record<
   string, // path
-  { compiled: boolean; contracts: Record<string, COMPILED_CONTRACT> } // file can contain multiple solidity contracts
+  COMPILED_FILE // file can contain multiple solidity contracts
 > = {}
 
-const initialState = { compiledSolidityFiles: initialCompiledSolidityFilesState }
+const initialState = {
+  compiledSolidityFiles: initialCompiledSolidityFilesState,
+  selectedContract: {
+    fileName: "",
+    contractName: "",
+  },
+}
 
 export const remixSlice = createSlice({
   name: "remix",
@@ -17,19 +23,22 @@ export const remixSlice = createSlice({
       state.compiledSolidityFiles[action.payload] = { compiled: false, contracts: {} }
     },
 
-    solidityFileCompiled: (
-      state,
-      action: PayloadAction<{ path: string; contracts: Record<string, COMPILED_CONTRACT> }>
-    ) => {
+    solidityFileCompiled: (state, action: PayloadAction<{ path: string; compilationResult: COMPILED_FILE }>) => {
       // only treat solidity files managed by the plugin
       if (state.compiledSolidityFiles[action.payload.path]) {
-        state.compiledSolidityFiles[action.payload.path].compiled = true
-        state.compiledSolidityFiles[action.payload.path].contracts = action.payload.contracts
+        state.compiledSolidityFiles[action.payload.path].compiled = action.payload.compilationResult.compiled
+        state.compiledSolidityFiles[action.payload.path].contracts = action.payload.compilationResult.contracts
+        state.compiledSolidityFiles[action.payload.path].errors = action.payload.compilationResult.errors
       }
+    },
+
+    selectContract: (state, action: PayloadAction<{ fileName: string; contractName: string }>) => {
+      state.selectedContract.fileName = action.payload.fileName
+      state.selectedContract.contractName = action.payload.contractName
     },
   },
 })
 
-export const { newSolidityFile, solidityFileCompiled } = remixSlice.actions
+export const { newSolidityFile, solidityFileCompiled, selectContract } = remixSlice.actions
 
 export default remixSlice.reducer

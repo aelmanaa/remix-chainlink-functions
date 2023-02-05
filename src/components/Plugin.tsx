@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react"
 import { Button } from "react-bootstrap"
-import { Solidity } from "./plugin-comp"
+import { Solidity, Transaction } from "./plugin-comp"
 import { FunctionsPlugin } from "../remix"
 import { useDispatch } from "react-redux"
 import { solidityFileCompiled, newSolidityFile } from "../redux/reducers"
@@ -29,14 +29,16 @@ export const Plugin = () => {
 
   return (
     <div>
-      <Button variant="primary" onClick={loadSamples}>
-        Load samples
-      </Button>
-      <Button variant="primary" onClick={getJavascriptSources}>
-        Get javascript sources
-      </Button>
-      <hr className="rounded" />
+      <div className="border-top border-bottom">
+        <Button variant="primary" onClick={loadSamples}>
+          Load samples
+        </Button>
+        <Button variant="primary" onClick={getJavascriptSources}>
+          Get javascript sources
+        </Button>
+      </div>
       <Solidity />
+      <Transaction />
     </div>
   )
 }

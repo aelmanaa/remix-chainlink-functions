@@ -1,7 +1,6 @@
 import { PluginClient } from "@remixproject/plugin"
-import { CompilationResult } from "@remixproject/plugin-api"
 import { createClient } from "@remixproject/plugin-webview"
-import { COMPILED_CONTRACT, READ_DIR_RESPONSE } from "../models"
+import { COMPILED_FILE, READ_DIR_RESPONSE } from "../models"
 
 export class FunctionsPlugin extends PluginClient {
   private readonly pathSeperator = "/"
@@ -11,7 +10,7 @@ export class FunctionsPlugin extends PluginClient {
   private readonly javascriptSampesPath: string
   private readonly deps = ".deps"
   compiledSolidityFiles: Record<string, { compiled: boolean; path: string; bytecode: string; abi: Array<object> }>
-  constructor(onCompileHandler: (payload: { path: string; contracts: Record<string, COMPILED_CONTRACT> }) => void) {
+  constructor(onCompileHandler: (payload: { path: string; compilationResult: COMPILED_FILE }) => void) {
     super()
 
     createClient(this)
@@ -35,7 +34,6 @@ export class FunctionsPlugin extends PluginClient {
   }
 
   loadSamples = async (handler: (path: string) => void) => {
-    console.log("aem inside loadSamples")
     const soliditySamples: Record<string, string> = {
       "FunctionsConsumer.sol":
         "https://github.com/aelmanaa/ocr2dr-hardhat-starter-kit/blob/remix-samples/remix-samples/solidity/FunctionsConsumer.sol",
@@ -50,6 +48,7 @@ export class FunctionsPlugin extends PluginClient {
       const solidityFile = this.soliditySamplesPath + this.pathSeperator + key
       const solidityPathRemix = this.deps + this.pathSeperator + solidityFile
       await this.createFile(soliditySamples[key], solidityFile)
+      await this.call("terminal", "log", { type: "info", value: `compile ${solidityPathRemix}` })
       await this.call("solidity", "compile", solidityPathRemix)
       handler(solidityPathRemix)
     }
@@ -71,20 +70,22 @@ export class FunctionsPlugin extends PluginClient {
   }
 
   private setCallBacks = async (
-    onCompileHandler: (payload: { path: string; contracts: Record<string, COMPILED_CONTRACT> }) => void
+    onCompileHandler: (payload: { path: string; compilationResult: COMPILED_FILE }) => void
   ) => {
     this.on("solidity", "compilationFinished", async (target, sources, version, data) => {
-      console.log("aem solidity compilationfinished")
-      console.log("file target", target)
-      console.log("file source", sources)
-      console.log("file version", version)
-      console.log("file data", data)
-      const payload: { path: string; contracts: Record<string, COMPILED_CONTRACT> } = { path: target, contracts: {} }
+      await this.call("terminal", "log", { type: "info", value: `${target} compiled` })
+      const payload: { path: string; compilationResult: COMPILED_FILE } = {
+        path: target,
+        compilationResult: { compiled: true, contracts: {} },
+      }
       for (const contract in data.contracts[target]) {
-        payload.contracts[contract] = {
+        payload.compilationResult.contracts[contract] = {
           abi: data.contracts[target][contract].abi,
           bytecode: data.contracts[target][contract].evm.bytecode.object,
         }
+      }
+      if (data.errors) {
+        payload.compilationResult.errors = data.errors
       }
       onCompileHandler(payload)
     })
@@ -96,9 +97,7 @@ export class FunctionsPlugin extends PluginClient {
   }
 
   private readDir = async (dirPath: string) => {
-    console.log("aem files in dirPath ", dirPath)
     const files = (await this.call("fileManager", "readdir", dirPath)) as unknown as READ_DIR_RESPONSE
-    console.log("aem files", files)
     return files
   }
 }

@@ -75,7 +75,7 @@ export const Context = () => {
     }
   }, [dispatch])
   return (
-    <div>
+    <div className="border-bottom">
       {errorMessage ? <Alert variant="danger">{errorMessage}</Alert> : ""}
       <Account />
       <Networks />

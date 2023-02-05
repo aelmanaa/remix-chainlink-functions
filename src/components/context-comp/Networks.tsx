@@ -23,8 +23,10 @@ export const Networks = () => {
       <Form.Text className="text-muted">Connected Network: </Form.Text>
       <Form.Text className="text-muted">{chain}</Form.Text>
       <Form.Check disabled type="switch" checked={connected && !!selectedAccount} />
+
       <Form.Select
         size="sm"
+        className="udapp_contractNames custom-select"
         onChange={(event) => {
           event.preventDefault()
           const selectedIndex = event.target.options.selectedIndex

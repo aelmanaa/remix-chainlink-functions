@@ -37,9 +37,3 @@
     transform: rotate(360deg);
   }
 }
-
-/* Rounded border */
-hr.rounded {
-  border-top: 8px solid #bbb;
-  border-radius: 5px;
-}
