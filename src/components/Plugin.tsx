@@ -1,4 +1,4 @@
-import { useRef } from "react"
+import { useEffect, useRef } from "react"
 import { Button } from "react-bootstrap"
 import { Solidity } from "./plugin-comp"
 import { FunctionsPlugin } from "../remix"
@@ -18,6 +18,14 @@ export const Plugin = () => {
 
   const loadSamples = async () => await client.current.loadSamples(handler(dispatch, newSolidityFile))
   const getJavascriptSources = async () => await client.current.getJavascriptSources()
+
+  useEffect(() => {
+    const currentClient = client.current
+    return () => {
+      // cleanup logic
+      currentClient.removeAllListeners()
+    }
+  }, [])
 
   return (
     <div>

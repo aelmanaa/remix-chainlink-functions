@@ -30,6 +30,10 @@ export class FunctionsPlugin extends PluginClient {
       })
   }
 
+  removeAllListeners = async () => {
+    this.off("solidity", "compilationFinished")
+  }
+
   loadSamples = async (handler: (path: string) => void) => {
     console.log("aem inside loadSamples")
     const soliditySamples: Record<string, string> = {
