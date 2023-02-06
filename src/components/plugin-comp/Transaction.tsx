@@ -2,11 +2,13 @@ import { CopyToClipboard } from "react-copy-to-clipboard"
 import { useEffect } from "react"
 import Button from "react-bootstrap/esm/Button"
 import { useSelector, useDispatch } from "react-redux"
-import { LOG_TO_REMIX } from "../../models"
+import { EXPECTED_RETURN_TYPE, LOG_TO_REMIX, SOURCE_FILE, TRANSACTION, TRANSACTION_STATUS } from "../../models"
 import {
   setFunctionsConsumerAddress,
   setFunctionsConsumerExecuteRequest,
   setFunctionsConsumerSubscription,
+  setSourceFiles,
+  setTransaction,
 } from "../../redux/reducers"
 import { RootState } from "../../redux/store"
 import {
@@ -18,14 +20,26 @@ import {
   formatAmount,
   compareAccounts,
   addConsumerToRegistry,
+  executeRequest,
+  clearFunctionsConsumerListeners,
+  removeAllRegistryListeners,
+  listenToRegistryEvents,
 } from "../../utils"
 import { CustomTooltip } from "./CustomTooltip"
 import Form from "react-bootstrap/esm/Form"
 import { Col, InputGroup, Row } from "react-bootstrap"
 import { networksData } from "../../data"
-import { BigNumber } from "ethers"
+import { BigNumber, BigNumberish } from "ethers"
 
-export const Transaction = ({ logToRemixTerminal }: { logToRemixTerminal: LOG_TO_REMIX }) => {
+export const Transaction = ({
+  logToRemixTerminal,
+  getFileContent,
+  getJavascriptSources,
+}: {
+  logToRemixTerminal: LOG_TO_REMIX
+  getFileContent: (path: string) => Promise<string>
+  getJavascriptSources: () => Promise<Record<string, SOURCE_FILE>>
+}) => {
   const dispatch = useDispatch()
   const compiledSolidityFiles = useSelector((state: RootState) => state.remix.compiledSolidityFiles)
   const selectedSolidityContract = useSelector((state: RootState) => state.remix.selectedContract)
@@ -34,6 +48,8 @@ export const Transaction = ({ logToRemixTerminal }: { logToRemixTerminal: LOG_TO
   const selectedAccount = useSelector((state: RootState) => state.account.value.selectedAccount)
   const functionsConsumerAddress = useSelector((state: RootState) => state.functionsConsumer.address)
   const subscription = useSelector((state: RootState) => state.functionsConsumer.subscription)
+  const transactions = useSelector((state: RootState) => state.functionsConsumer.transactions)
+  const request = useSelector((state: RootState) => state.functionsConsumer.request)
   const sourceFiles = useSelector((state: RootState) => state.remix.sourceFiles)
   useEffect(() => {
     if (sourceFiles && Object.keys(sourceFiles).length > 0) {
@@ -42,6 +58,21 @@ export const Transaction = ({ logToRemixTerminal }: { logToRemixTerminal: LOG_TO
           sourcePath: Object.keys(sourceFiles)[0],
         })
       )
+    }
+    if (functionsConsumerAddress && transactions && transactions.length > 0) {
+      listenToRegistryEvents(networksData[chain].functionsOracleRegistry, async (args: unknown[]) => {
+        const payload: TRANSACTION = {
+          requestId: args[0] as string,
+          errorCallback: !(args[5] as boolean),
+          totalCost: ((args[4] as BigNumberish) || "").toString(),
+        }
+        if (args[5] as boolean) payload.status = TRANSACTION_STATUS.fail
+        dispatch(setTransaction(payload))
+      })
+    }
+    return () => {
+      clearFunctionsConsumerListeners(functionsConsumerAddress)
+      removeAllRegistryListeners(networksData[chain].functionsOracleRegistry)
     }
   }, [
     dispatch,
@@ -53,6 +84,7 @@ export const Transaction = ({ logToRemixTerminal }: { logToRemixTerminal: LOG_TO
     functionsConsumerAddress,
     sourceFiles,
     subscription,
+    transactions,
   ])
 
   const disableDeploy = () => {
@@ -172,6 +204,27 @@ export const Transaction = ({ logToRemixTerminal }: { logToRemixTerminal: LOG_TO
                   "info",
                   `Contract ${selectedSolidityContract.contractName} from file ${selectedSolidityContract.fileName} deployed. Address: ${functionsConsumer.address}`
                 )
+                functionsConsumer.on("RequestSent", (args) => {
+                  console.log("aem RequestSent, args", args)
+                  dispatch(
+                    setTransaction({
+                      requestId: args[0],
+                      expectedReturnType: request.expectedReturnType,
+                      status: TRANSACTION_STATUS.pending,
+                    })
+                  )
+                })
+                functionsConsumer.on("OCRResponse", (args) => {
+                  console.log("aem OCRResponse, args", args)
+                  dispatch(
+                    setTransaction({
+                      requestId: args[0],
+                      result: args[1],
+                      error: args[2],
+                      status: args[1] ? TRANSACTION_STATUS.success : TRANSACTION_STATUS.fail,
+                    })
+                  )
+                })
                 await logToRemixTerminal(
                   "info",
                   `Add consumer: ${functionsConsumer.address} to subscription ${subscription.id}`
@@ -242,6 +295,11 @@ export const Transaction = ({ logToRemixTerminal }: { logToRemixTerminal: LOG_TO
                                   placeholder="string"
                                   style={{ display: "block" }}
                                   id="executeRequest-source"
+                                  onClick={async (event) => {
+                                    event.preventDefault()
+                                    const samples = await getJavascriptSources()
+                                    dispatch(setSourceFiles(samples))
+                                  }}
                                   onChange={(event) => {
                                     event.preventDefault()
                                     const selectedIndex = event.target.options.selectedIndex
@@ -292,6 +350,46 @@ export const Transaction = ({ logToRemixTerminal }: { logToRemixTerminal: LOG_TO
                               </CustomTooltip>
                             </Form.Group>
                           </Col>
+                          <Col>
+                            <Form.Group className="udapp_multiArg">
+                              <Form.Label htmlFor="executeRequest-expectedResult"> Response decoder: </Form.Label>
+                              <CustomTooltip
+                                placement="left-end"
+                                tooltipId="udappContractActionsTooltip"
+                                tooltipClasses="text-nowrap"
+                                tooltipText="expectedResult"
+                              >
+                                <Form.Select
+                                  className="custom-select"
+                                  style={{ display: "block" }}
+                                  id="executeRequest-expectedResult"
+                                  onChange={(event) => {
+                                    event.preventDefault()
+                                    const selectedIndex = event.target.options.selectedIndex
+                                    const key = event.target.options[selectedIndex].getAttribute(
+                                      "data-key"
+                                    ) as unknown as EXPECTED_RETURN_TYPE
+                                    console.log("aem enum expected type", key)
+                                    dispatch(
+                                      setFunctionsConsumerExecuteRequest({
+                                        expectedReturnType: key,
+                                      })
+                                    )
+                                  }}
+                                >
+                                  {Object.keys(EXPECTED_RETURN_TYPE).map((key) => {
+                                    if (isNaN(Number(key)))
+                                      return (
+                                        <option key={key.toString()} data-key={key}>
+                                          {key}
+                                        </option>
+                                      )
+                                    return null
+                                  })}
+                                </Form.Select>
+                              </CustomTooltip>
+                            </Form.Group>
+                          </Col>
                         </Row>
                         <Form.Group className="udapp_multiArg">
                           <Form.Label htmlFor="executeRequest-secrets"> secrets: </Form.Label>
@@ -315,9 +413,24 @@ export const Transaction = ({ logToRemixTerminal }: { logToRemixTerminal: LOG_TO
                           tooltipText="executeRequest - transact (not payable)"
                         >
                           <Button
-                            onClick={(e) => {
-                              // aem todo
-                              console.log("aem todo", e)
+                            onClick={async (e) => {
+                              e.preventDefault()
+                              console.log("aem current request", request)
+                              console.log("aem current functionsConsumer", functionsConsumerAddress)
+                              console.log("aem subscription", subscription)
+                              console.log("aem client content", await getFileContent(request.sourcePath || ""))
+                              const transactionhash = await executeRequest(
+                                functionsConsumerAddress,
+                                await getFileContent(request.sourcePath || ""),
+                                request.secrets || "",
+                                request.args || [""],
+                                subscription.id || "",
+                                100_000
+                              )
+                              await logToRemixTerminal(
+                                "info",
+                                `Execute request successful. transaction hash: ${transactionhash}`
+                              )
                             }}
                             className="udapp_instanceButton btn-warning"
                           >

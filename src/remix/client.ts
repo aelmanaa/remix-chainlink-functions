@@ -74,7 +74,6 @@ export class FunctionsPlugin extends PluginClient {
     const regexp = new RegExp("(" + dirPath + this.pathSeperator + ")(?<fileName>.*).js")
     const samples: Record<string, SOURCE_FILE> = {}
     for (const key in files) {
-      console.log(key, files[key].isDirectory)
       if (!files[key].isDirectory) {
         const res = regexp.exec(key)
         if (res?.groups && res.groups.fileName) {
@@ -87,8 +86,8 @@ export class FunctionsPlugin extends PluginClient {
     return samples
   }
 
-  deployConsumer = async (oracleAddress: string) => {
-    console.log(oracleAddress)
+  getFileContent = async (path: string) => {
+    return await this.call("fileManager", "readFile", path)
   }
 
   private setCallBacks = async (

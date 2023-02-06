@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit"
 import type { PayloadAction } from "@reduxjs/toolkit"
-import { Location, REQUEST, SUBSCRIPTION } from "../../models"
+import { EXPECTED_RETURN_TYPE, Location, REQUEST, SUBSCRIPTION, TRANSACTION } from "../../models"
 
 const initialRequestState: REQUEST = {
   secrets: "",
@@ -8,8 +8,9 @@ const initialRequestState: REQUEST = {
   sourcePath: "",
   gasLimit: 500000,
   secretLocation: Location.Inline,
+  expectedReturnType: EXPECTED_RETURN_TYPE.Buffer,
 }
-const initialState: { address: string; request: REQUEST; subscription: SUBSCRIPTION } = {
+const initialState: { address: string; request: REQUEST; subscription: SUBSCRIPTION; transactions: TRANSACTION[] } = {
   address: "",
   request: initialRequestState,
   subscription: {
@@ -17,6 +18,7 @@ const initialState: { address: string; request: REQUEST; subscription: SUBSCRIPT
     balance: 0,
     owner: "",
   },
+  transactions: [],
 }
 
 export const functionsConsumerSlice = createSlice({
@@ -32,6 +34,14 @@ export const functionsConsumerSlice = createSlice({
     setSubscription: (state, action: PayloadAction<SUBSCRIPTION>) => {
       state.subscription = { ...state.subscription, ...action.payload }
     },
+    setTransaction: (state, action: PayloadAction<TRANSACTION>) => {
+      const index = state.transactions.findIndex((element) => element.requestId === action.payload.requestId)
+      if (index > -1) {
+        state.transactions[index] = { ...state.transactions[index], ...action.payload }
+      } else {
+        state.transactions.push(action.payload)
+      }
+    },
   },
 })
 
@@ -39,6 +49,7 @@ export const {
   setAddress: setFunctionsConsumerAddress,
   setRequest: setFunctionsConsumerExecuteRequest,
   setSubscription: setFunctionsConsumerSubscription,
+  setTransaction,
 } = functionsConsumerSlice.actions
 
 export default functionsConsumerSlice.reducer

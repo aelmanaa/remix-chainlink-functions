@@ -25,3 +25,20 @@ export const addConsumerToRegistry = async (
   const billingRegistry = FunctionsBillingRegistryFactory.connect(billingRegistryAddress, signer)
   await (await billingRegistry.addConsumer(subscriptionId, consumer)).wait()
 }
+
+export const listenToRegistryEvents = async (
+  billingRegistryAddress: string,
+  handler: (args: unknown[]) => Promise<void>
+) => {
+  const provider = new ethers.providers.Web3Provider(window.ethereum)
+  const billingRegistry = FunctionsBillingRegistryFactory.connect(billingRegistryAddress, provider)
+  billingRegistry.on("BillingEnd", async (args) => {
+    await handler(args)
+  })
+}
+
+export const removeAllRegistryListeners = async (billingRegistryAddress: string) => {
+  const provider = new ethers.providers.Web3Provider(window.ethereum)
+  const billingRegistry = FunctionsBillingRegistryFactory.connect(billingRegistryAddress, provider)
+  billingRegistry.removeAllListeners()
+}

@@ -9,11 +9,19 @@ export const compareAccounts = (accountA: string | undefined, accountB: string |
   return true
 }
 
-export const formatAddress = (account: string) => {
+export const formatAddress = (account: string | undefined) => {
   if (!account) return ""
   const truncateRegex = /^(0x[a-zA-Z0-9]{4})[a-zA-Z0-9]+([a-zA-Z0-9]{4})$/
   const match = account.match(truncateRegex)
   if (!match) return account
+  return `${match[1]}…${match[2]}`
+}
+
+export const formatTransactionHash = (hash: string | undefined) => {
+  if (!hash) return ""
+  const truncateRegex = /^(0x[a-zA-Z0-9]{4})[a-zA-Z0-9]+([a-zA-Z0-9]{4})$/
+  const match = hash.match(truncateRegex)
+  if (!match) return hash
   return `${match[1]}…${match[2]}`
 }
 
