@@ -61,6 +61,8 @@ export const Transaction = ({
     }
     if (functionsConsumerAddress && transactions && transactions.length > 0) {
       listenToRegistryEvents(networksData[chain].functionsOracleRegistry, async (args: unknown[]) => {
+        console.log("aem registry events", args)
+        if (transactions.findIndex((element) => element.requestId === (args[0] as string)) === -1) return
         const payload: TRANSACTION = {
           requestId: args[0] as string,
           errorCallback: !(args[5] as boolean),
@@ -415,13 +417,11 @@ export const Transaction = ({
                           <Button
                             onClick={async (e) => {
                               e.preventDefault()
-                              console.log("aem current request", request)
-                              console.log("aem current functionsConsumer", functionsConsumerAddress)
-                              console.log("aem subscription", subscription)
-                              console.log("aem client content", await getFileContent(request.sourcePath || ""))
+                              await logToRemixTerminal("info", `Execute request.`)
                               const transactionhash = await executeRequest(
                                 functionsConsumerAddress,
-                                await getFileContent(request.sourcePath || ""),
+                                "return Functions.encodeUint256(10)" ||
+                                  (await getFileContent(request.sourcePath || "")),
                                 request.secrets || "",
                                 request.args || [""],
                                 subscription.id || "",
