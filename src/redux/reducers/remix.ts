@@ -1,18 +1,20 @@
 import { createSlice } from "@reduxjs/toolkit"
 import type { PayloadAction } from "@reduxjs/toolkit"
-import { COMPILED_FILE } from "../../models"
+import { COMPILED_FILE, SOURCE_FILE } from "../../models"
 
 const initialCompiledSolidityFilesState: Record<
   string, // path
   COMPILED_FILE // file can contain multiple solidity contracts
 > = {}
 
+const initialSourceFiles: Record<string, SOURCE_FILE> = {}
 const initialState = {
   compiledSolidityFiles: initialCompiledSolidityFilesState,
   selectedContract: {
     fileName: "",
     contractName: "",
   },
+  sourceFiles: initialSourceFiles,
 }
 
 export const remixSlice = createSlice({
@@ -36,9 +38,13 @@ export const remixSlice = createSlice({
       state.selectedContract.fileName = action.payload.fileName
       state.selectedContract.contractName = action.payload.contractName
     },
+
+    setSourceFiles: (state, action: PayloadAction<Record<string, SOURCE_FILE>>) => {
+      state.sourceFiles = action.payload
+    },
   },
 })
 
-export const { newSolidityFile, solidityFileCompiled, selectContract } = remixSlice.actions
+export const { newSolidityFile, solidityFileCompiled, selectContract, setSourceFiles } = remixSlice.actions
 
 export default remixSlice.reducer

@@ -17,4 +17,8 @@ export interface COMPILED_FILE {
   errors?: CompilationError[]
 }
 
+export interface SOURCE_FILE {
+  fileName: string
+}
+
 export type LOG_TO_REMIX = (type: "info" | "html" | "warn" | "error" | "log", value: string) => Promise<void>

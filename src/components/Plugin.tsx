@@ -1,9 +1,9 @@
 import { useEffect, useRef } from "react"
-import { Button } from "react-bootstrap"
+import { Button, FormGroup } from "react-bootstrap"
 import { Solidity, Transaction } from "./plugin-comp"
 import { FunctionsPlugin } from "../remix"
 import { useDispatch } from "react-redux"
-import { solidityFileCompiled, newSolidityFile } from "../redux/reducers"
+import { solidityFileCompiled, newSolidityFile, setSourceFiles } from "../redux/reducers"
 import { AnyAction, Dispatch } from "redux"
 import { ActionCreatorWithPayload } from "@reduxjs/toolkit"
 
@@ -16,7 +16,8 @@ export const Plugin = () => {
   }
   const client = useRef(new FunctionsPlugin(handler(dispatch, solidityFileCompiled)))
 
-  const loadSamples = async () => await client.current.loadSamples(handler(dispatch, newSolidityFile))
+  const loadSamples = async () =>
+    await client.current.loadSamples(handler(dispatch, newSolidityFile), handler(dispatch, setSourceFiles))
   const getJavascriptSources = async () => await client.current.getJavascriptSources()
 
   useEffect(() => {
@@ -28,17 +29,12 @@ export const Plugin = () => {
   }, [])
 
   return (
-    <div>
-      <div className="border-top border-bottom">
-        <Button variant="primary" onClick={loadSamples}>
-          Load samples
-        </Button>
-        <Button variant="primary" onClick={getJavascriptSources}>
-          Get javascript sources
-        </Button>
-      </div>
+    <FormGroup className="border-top border-bottom">
+      <Button variant="primary" onClick={loadSamples}>
+        Load samples
+      </Button>
       <Solidity />
       <Transaction logToRemixTerminal={client.current.logToRemixTerminal} />
-    </div>
+    </FormGroup>
   )
 }

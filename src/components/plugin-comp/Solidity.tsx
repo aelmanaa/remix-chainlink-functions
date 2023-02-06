@@ -22,7 +22,7 @@ export const Solidity = () => {
   }
 
   return (
-    <div className="border-top border-bottom">
+    <Form.Group>
       <h2>Compiler</h2>
       <Form>
         <Form.Group style={{ display: "flex", flexDirection: "row" }}>
@@ -70,6 +70,6 @@ export const Solidity = () => {
             return <Form.Control key={`compilation_error_${index}`} plaintext readOnly defaultValue={message} />
           })
         : ""}
-    </div>
+    </Form.Group>
   )
 }

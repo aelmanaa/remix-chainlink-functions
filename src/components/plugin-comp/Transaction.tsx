@@ -3,12 +3,23 @@ import { useEffect } from "react"
 import Button from "react-bootstrap/esm/Button"
 import { useSelector, useDispatch } from "react-redux"
 import { LOG_TO_REMIX } from "../../models"
-import { setFunctionsConsumerAddress } from "../../redux/reducers"
+import {
+  setFunctionsConsumerAddress,
+  setFunctionsConsumerExecuteRequest,
+  setFunctionsConsumerSubscription,
+} from "../../redux/reducers"
 import { RootState } from "../../redux/store"
-import { deployFunctionsConsumer, errorsInFile, formatAddress } from "../../utils"
+import {
+  deployFunctionsConsumer,
+  errorsInFile,
+  formatAddress,
+  getSubscriptionIdOwner,
+  getSubscriptionIdBalance,
+} from "../../utils"
 import { CustomTooltip } from "./CustomTooltip"
-
-const onlyFuncName = ["executeRequest", "latestError", "latestResponse"]
+import Form from "react-bootstrap/esm/Form"
+import { Col, InputGroup, Row } from "react-bootstrap"
+import { networksData } from "../../data"
 
 export const Transaction = ({ logToRemixTerminal }: { logToRemixTerminal: LOG_TO_REMIX }) => {
   const dispatch = useDispatch()
@@ -18,8 +29,16 @@ export const Transaction = ({ logToRemixTerminal }: { logToRemixTerminal: LOG_TO
   const connected = useSelector((state: RootState) => state.chain.chainConnected)
   const selectedAccount = useSelector((state: RootState) => state.account.value.selectedAccount)
   const functionsConsumerAddress = useSelector((state: RootState) => state.functionsConsumer.address)
+  const sourceFiles = useSelector((state: RootState) => state.remix.sourceFiles)
   useEffect(() => {
     console.log("test")
+    if (sourceFiles && Object.keys(sourceFiles).length > 0) {
+      dispatch(
+        setFunctionsConsumerExecuteRequest({
+          sourcePath: Object.keys(sourceFiles)[0],
+        })
+      )
+    }
   }, [
     dispatch,
     chain,
@@ -28,6 +47,7 @@ export const Transaction = ({ logToRemixTerminal }: { logToRemixTerminal: LOG_TO
     compiledSolidityFiles,
     selectedSolidityContract,
     functionsConsumerAddress,
+    sourceFiles,
   ])
 
   const disableDeploy = () => {
@@ -46,32 +66,64 @@ export const Transaction = ({ logToRemixTerminal }: { logToRemixTerminal: LOG_TO
   return (
     <div>
       <h2>Deploy & Run transactions</h2>
-      <Button
-        className="btn-warning"
-        disabled={disableDeploy()}
-        onClick={async (e) => {
-          e.preventDefault()
-          console.log("aem transaction.tsx", selectedSolidityContract)
-          const compiledContract =
-            compiledSolidityFiles[selectedSolidityContract.fileName].contracts[selectedSolidityContract.contractName]
-          await logToRemixTerminal(
-            "info",
-            `Deploy contract ${selectedSolidityContract.contractName} from file ${selectedSolidityContract.fileName}`
-          )
-          const functionsConsumer = await deployFunctionsConsumer(
-            chain,
-            compiledContract.abi,
-            compiledContract.bytecode
-          )
-          await logToRemixTerminal(
-            "info",
-            `Contract ${selectedSolidityContract.contractName} from file ${selectedSolidityContract.fileName} deployed. Address: ${functionsConsumer.address}`
-          )
-          dispatch(setFunctionsConsumerAddress(functionsConsumer.address))
-        }}
-      >
-        Deploy {selectedSolidityContract.contractName}
-      </Button>
+      <Form.Group>
+        <Col>
+          <Form.Group className="udapp_multiArg">
+            <Form.Label htmlFor="consumer-subscriptionId"> subscriptionId: </Form.Label>
+            <CustomTooltip
+              placement="left-end"
+              tooltipId="udappContractActionsTooltip"
+              tooltipClasses="text-nowrap"
+              tooltipText="subscriptionId"
+            >
+              <Form.Control
+                id="consumer-subscriptionId"
+                placeholder="uint64"
+                onChange={async (e) => {
+                  e.preventDefault()
+                  try {
+                    const id = parseInt(e.target.value)
+                    const registryAddress = networksData[chain].functionsOracleRegistry
+                    const balance = await getSubscriptionIdBalance(id, registryAddress)
+                    const owner = await getSubscriptionIdOwner(id, registryAddress)
+                    dispatch(setFunctionsConsumerSubscription({ id, balance: balance.toHexString(), owner }))
+                  } catch (error) {
+                    // TODO
+                  }
+                }}
+              />
+            </CustomTooltip>
+          </Form.Group>
+          <Button
+            className="btn-warning"
+            disabled={disableDeploy()}
+            onClick={async (e) => {
+              e.preventDefault()
+              console.log("aem transaction.tsx", selectedSolidityContract)
+              const compiledContract =
+                compiledSolidityFiles[selectedSolidityContract.fileName].contracts[
+                  selectedSolidityContract.contractName
+                ]
+              await logToRemixTerminal(
+                "info",
+                `Deploy contract ${selectedSolidityContract.contractName} from file ${selectedSolidityContract.fileName}`
+              )
+              const functionsConsumer = await deployFunctionsConsumer(
+                chain,
+                compiledContract.abi,
+                compiledContract.bytecode
+              )
+              await logToRemixTerminal(
+                "info",
+                `Contract ${selectedSolidityContract.contractName} from file ${selectedSolidityContract.fileName} deployed. Address: ${functionsConsumer.address}`
+              )
+              dispatch(setFunctionsConsumerAddress(functionsConsumer.address))
+            }}
+          >
+            Deploy
+          </Button>
+        </Col>
+      </Form.Group>
       {functionsConsumerAddress && <h4>Deployed contract</h4>}
       {functionsConsumerAddress && (
         <div className="instance udapp_instance udapp_run-instance border-dark">
@@ -84,103 +136,124 @@ export const Transaction = ({ logToRemixTerminal }: { logToRemixTerminal: LOG_TO
               </div>
               <div className="btn-group">
                 <CopyToClipboard text={functionsConsumerAddress}>
-                  <button className="btn p-1 btn-secondary">Copy</button>
+                  <Button className="p-1 btn-secondary">Copy</Button>
                 </CopyToClipboard>
               </div>
             </div>
           </div>
           <div className="udapp_cActionsWrapper">
             <div className="udapp_contractActionsContainer">
-              {compiledSolidityFiles[selectedSolidityContract.fileName].contracts[
-                selectedSolidityContract.contractName
-              ].abi.map((funcABI, index) => {
-                if (funcABI.type !== "function") return null
-                if (!onlyFuncName.includes(funcABI.name || "")) return null
-                const title = funcABI.name
-                let buttonOptions = {
-                  title: title + " - call",
-                  content: "call",
-                  classList: "btn-info",
-                  dataId: title + " - call",
-                }
-                if (funcABI.stateMutability === "payable" || funcABI.payable) {
-                  buttonOptions = {
-                    title: title + " - transact (payable)",
-                    content: "transact",
-                    classList: "btn-danger",
-                    dataId: title + " - transact (payable)",
-                  }
-                } else if (funcABI.stateMutability === "nonpayable") {
-                  buttonOptions = {
-                    title: title + " - transact (not payable)",
-                    content: "transact",
-                    classList: "btn-warning",
-                    dataId: title + " - transact (not payable)",
-                  }
-                }
-                return (
-                  <div
-                    key={index}
-                    className={`udapp_contractProperty ${
-                      funcABI.inputs && funcABI.inputs.length > 0 ? "udapp_hasArgs" : ""
-                    }`}
-                  >
-                    <div className="udapp_contractActionsContainerMulti" style={{ display: "flex" }}>
-                      <div className="udapp_contractActionsContainerMultiInner text-dark">
-                        <div className="udapp_multiHeader">
-                          <div className="udapp_multiTitle run-instance-multi-title pt-3">{title}</div>
-                          <i className="fas fa-angle-up udapp_methCaret"></i>
-                        </div>
-                        <div>
-                          {funcABI.inputs &&
-                            funcABI.inputs.map((inp, index) => {
-                              return (
-                                <div className="udapp_multiArg" key={index}>
-                                  <label htmlFor={inp.name}> {inp.name}: </label>
-                                  <CustomTooltip
-                                    placement="left-end"
-                                    tooltipId="udappContractActionsTooltip"
-                                    tooltipClasses="text-nowrap"
-                                    tooltipText={inp.name}
-                                  >
-                                    <input
-                                      ref={(el) => {
-                                        // todo
-                                        // multiFields.current[index] = el
-                                        console.log("aem ", el)
-                                      }}
-                                      className="form-control"
-                                      placeholder={inp.type}
-                                    />
-                                  </CustomTooltip>
-                                </div>
-                              )
-                            })}
-                        </div>
-                        <div className="d-flex udapp_group udapp_multiArg">
-                          <CustomTooltip
-                            placement={"right"}
-                            tooltipClasses="text-nowrap"
-                            tooltipId="remixUdappInstanceButtonTooltip"
-                            tooltipText={buttonOptions.title}
-                          >
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                // aem todo
-                                console.log("aem todo", e)
-                              }}
-                              className={`udapp_instanceButton ${buttonOptions.classList}`}
-                            >
-                              {buttonOptions.content}
-                            </button>
-                          </CustomTooltip>
-                        </div>
-                      </div>
+              <div className="udapp_contractProperty udapp_hasArgs">
+                <div className="udapp_contractActionsContainerMulti" style={{ display: "flex" }}>
+                  <div className="udapp_contractActionsContainerMultiInner text-dark">
+                    <div className="udapp_multiHeader">
+                      <div className="udapp_multiTitle run-instance-multi-title pt-3">executeRequest</div>
+                      <i className="fas fa-angle-up udapp_methCaret"></i>
                     </div>
+                    <Form.Group>
+                      <Col>
+                        <Row>
+                          <Col>
+                            <Form.Group className="udapp_multiArg">
+                              <Form.Label htmlFor="executeRequest-source"> source: </Form.Label>
+                              <CustomTooltip
+                                placement="left-end"
+                                tooltipId="udappContractActionsTooltip"
+                                tooltipClasses="text-nowrap"
+                                tooltipText="source"
+                              >
+                                <Form.Select
+                                  className="custom-select"
+                                  placeholder="string"
+                                  style={{ display: "block" }}
+                                  id="executeRequest-source"
+                                  onChange={(event) => {
+                                    event.preventDefault()
+                                    const selectedIndex = event.target.options.selectedIndex
+                                    const key = event.target.options[selectedIndex].getAttribute("data-key") as string
+                                    dispatch(
+                                      setFunctionsConsumerExecuteRequest({
+                                        sourcePath: key,
+                                      })
+                                    )
+                                  }}
+                                >
+                                  {sourceFiles &&
+                                    Object.keys(sourceFiles).map((key) => {
+                                      return (
+                                        <option key={key} data-key={key}>
+                                          {sourceFiles[key].fileName}
+                                        </option>
+                                      )
+                                    })}
+                                </Form.Select>
+                              </CustomTooltip>
+                            </Form.Group>
+                          </Col>
+                          <Col>
+                            <Form.Group className="udapp_multiArg">
+                              <Form.Label htmlFor="executeRequest-args"> args: </Form.Label>
+                              <CustomTooltip
+                                placement="left-end"
+                                tooltipId="udappContractActionsTooltip"
+                                tooltipClasses="text-nowrap"
+                                tooltipText="args"
+                              >
+                                <Form.Control
+                                  id="executeRequest-args"
+                                  placeholder="string[]"
+                                  onChange={(e) => {
+                                    e.preventDefault()
+                                    try {
+                                      const value = JSON.parse(e.target.value) as string[]
+                                      dispatch(
+                                        setFunctionsConsumerExecuteRequest({
+                                          args: value,
+                                        })
+                                      )
+                                    } catch (err) {}
+                                  }}
+                                />
+                              </CustomTooltip>
+                            </Form.Group>
+                          </Col>
+                        </Row>
+                        <Form.Group className="udapp_multiArg">
+                          <Form.Label htmlFor="executeRequest-secrets"> secrets: </Form.Label>
+                          <CustomTooltip
+                            placement="left-end"
+                            tooltipId="udappContractActionsTooltip"
+                            tooltipClasses="text-nowrap"
+                            tooltipText="secrets"
+                          >
+                            <InputGroup.Text id="executeRequest-secrets">bytes</InputGroup.Text>
+                          </CustomTooltip>
+                        </Form.Group>
+                      </Col>
+                    </Form.Group>
+                    <Col>
+                      <Form.Group className="d-flex udapp_group udapp_multiArg">
+                        <CustomTooltip
+                          placement={"right"}
+                          tooltipClasses="text-nowrap"
+                          tooltipId="remixUdappInstanceButtonTooltip"
+                          tooltipText="executeRequest - transact (not payable)"
+                        >
+                          <Button
+                            onClick={(e) => {
+                              // aem todo
+                              console.log("aem todo", e)
+                            }}
+                            className="udapp_instanceButton btn-warning"
+                          >
+                            transact
+                          </Button>
+                        </CustomTooltip>
+                      </Form.Group>
+                    </Col>
                   </div>
-                )
-              })}
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -1,6 +1,6 @@
 import { PluginClient } from "@remixproject/plugin"
 import { createClient } from "@remixproject/plugin-webview"
-import { COMPILED_FILE, LOG_TO_REMIX, READ_DIR_RESPONSE } from "../models"
+import { COMPILED_FILE, LOG_TO_REMIX, READ_DIR_RESPONSE, SOURCE_FILE } from "../models"
 
 export class FunctionsPlugin extends PluginClient {
   private readonly pathSeperator = "/"
@@ -37,7 +37,10 @@ export class FunctionsPlugin extends PluginClient {
     this.off("solidity", "compilationFinished")
   }
 
-  loadSamples = async (handler: (path: string) => void) => {
+  loadSamples = async (
+    solidityHandler: (path: string) => void,
+    sourceFilesHandler: (sourceFiles: Record<string, SOURCE_FILE>) => void
+  ) => {
     const soliditySamples: Record<string, string> = {
       "FunctionsConsumer.sol":
         "https://github.com/aelmanaa/ocr2dr-hardhat-starter-kit/blob/remix-samples/remix-samples/solidity/FunctionsConsumer.sol",
@@ -54,19 +57,34 @@ export class FunctionsPlugin extends PluginClient {
       await this.createFile(soliditySamples[key], solidityFile)
       await this.call("terminal", "log", { type: "info", value: `compile ${solidityPathRemix}` })
       await this.call("solidity", "compile", solidityPathRemix)
-      handler(solidityPathRemix)
+      solidityHandler(solidityPathRemix)
     }
 
     for (const key in javascriptSamples) {
       await this.createFile(javascriptSamples[key], this.javascriptSampesPath + this.pathSeperator + key)
     }
+    // load source files
+    const samples = await this.getJavascriptSources()
+    sourceFilesHandler(samples)
   }
 
   getJavascriptSources = async () => {
-    const files = await this.readDir(this.deps + this.pathSeperator + this.javascriptSampesPath)
+    const dirPath = this.deps + this.pathSeperator + this.javascriptSampesPath
+    const files = await this.readDir(dirPath)
+    const regexp = new RegExp("(" + dirPath + this.pathSeperator + ")(?<fileName>.*).js")
+    const samples: Record<string, SOURCE_FILE> = {}
     for (const key in files) {
       console.log(key, files[key].isDirectory)
+      if (!files[key].isDirectory) {
+        const res = regexp.exec(key)
+        if (res?.groups && res.groups.fileName) {
+          samples[key] = {
+            fileName: res.groups.fileName,
+          }
+        }
+      }
     }
+    return samples
   }
 
   deployConsumer = async (oracleAddress: string) => {
