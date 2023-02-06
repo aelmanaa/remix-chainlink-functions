@@ -1,6 +1,6 @@
 import { ethers } from "ethers"
 import { networksData } from "../data"
-import { SUPPORTED_CHAIN } from "../models"
+import { Location, SUPPORTED_CHAIN } from "../models"
 import { FunctionsConsumer } from "../types-abis"
 import { FunctionsConsumerFactory } from "./factory"
 
@@ -27,6 +27,7 @@ export const executeRequest = async (
   functionsConsumerAddress: string,
   source: string,
   secrets: ethers.utils.BytesLike,
+  secretsLocation: Location,
   args: string[],
   subscriptionId: ethers.BigNumberish,
   gasLimit: ethers.BigNumberish
@@ -36,14 +37,23 @@ export const executeRequest = async (
   const functionsConsumer = FunctionsConsumerFactory.connect(functionsConsumerAddress, signer)
   console.log("aem debug executeREquest")
   console.log(secrets)
+  console.log(secretsLocation)
   console.log(args)
   console.log(subscriptionId)
   console.log(gasLimit)
   console.log(source)
   const receipt = await (
-    await functionsConsumer.executeRequest(source, secrets || [], args || [], subscriptionId, gasLimit, {
-      gasLimit: 500000,
-    })
+    await functionsConsumer.executeRequest(
+      source,
+      secrets || [],
+      secretsLocation,
+      args || [],
+      subscriptionId,
+      gasLimit,
+      {
+        gasLimit: 500000,
+      }
+    )
   ).wait()
   return receipt.transactionHash
 }

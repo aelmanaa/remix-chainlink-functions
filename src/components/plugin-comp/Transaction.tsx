@@ -2,7 +2,14 @@ import { CopyToClipboard } from "react-copy-to-clipboard"
 import { useEffect } from "react"
 import Button from "react-bootstrap/esm/Button"
 import { useSelector, useDispatch } from "react-redux"
-import { EXPECTED_RETURN_TYPE, LOG_TO_REMIX, SOURCE_FILE, TRANSACTION, TRANSACTION_STATUS } from "../../models"
+import {
+  EXPECTED_RETURN_TYPE,
+  Location,
+  LOG_TO_REMIX,
+  SOURCE_FILE,
+  TRANSACTION,
+  TRANSACTION_STATUS,
+} from "../../models"
 import {
   setFunctionsConsumerAddress,
   setFunctionsConsumerExecuteRequest,
@@ -59,8 +66,8 @@ export const Transaction = ({
         })
       )
     }
-    if (functionsConsumerAddress && transactions && transactions.length > 0) {
-      listenToRegistryEvents(networksData[chain].functionsOracleRegistry, async (args: unknown[]) => {
+    if (transactions && transactions.length > 0) {
+      listenToRegistryEvents(networksData[chain].functionsOracleRegistry, async (args) => {
         console.log("aem registry events", args)
         if (transactions.findIndex((element) => element.requestId === (args[0] as string)) === -1) return
         const payload: TRANSACTION = {
@@ -206,18 +213,17 @@ export const Transaction = ({
                   "info",
                   `Contract ${selectedSolidityContract.contractName} from file ${selectedSolidityContract.fileName} deployed. Address: ${functionsConsumer.address}`
                 )
-                functionsConsumer.on("RequestSent", (args) => {
-                  console.log("aem RequestSent, args", args)
+                functionsConsumer.on("RequestSent", (requestId) => {
                   dispatch(
                     setTransaction({
-                      requestId: args[0],
+                      requestId,
                       expectedReturnType: request.expectedReturnType,
                       status: TRANSACTION_STATUS.pending,
                     })
                   )
                 })
-                functionsConsumer.on("OCRResponse", (args) => {
-                  console.log("aem OCRResponse, args", args)
+                functionsConsumer.on("OCRResponse", async (...args) => {
+                  await logToRemixTerminal("info", `Request ${args[0]} fulfilled!`)
                   dispatch(
                     setTransaction({
                       requestId: args[0],
@@ -420,9 +426,9 @@ export const Transaction = ({
                               await logToRemixTerminal("info", `Execute request.`)
                               const transactionhash = await executeRequest(
                                 functionsConsumerAddress,
-                                "return Functions.encodeUint256(10)" ||
-                                  (await getFileContent(request.sourcePath || "")),
+                                await getFileContent(request.sourcePath || ""),
                                 request.secrets || "",
+                                request.secretLocation || Location.Inline,
                                 request.args || [""],
                                 subscription.id || "",
                                 100_000

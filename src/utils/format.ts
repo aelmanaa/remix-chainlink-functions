@@ -36,6 +36,6 @@ export const chainNameFromChainKey = (chainKey: SUPPORTED_CHAIN) => {
   return chainsData[chainKey].name
 }
 
-export const formatAmount = (amount: BigNumberish | undefined) => {
-  return amount ? (+formatEther(amount)).toFixed(3) : 0
+export const formatAmount = (amount: BigNumberish | undefined, decimals?: number) => {
+  return amount ? (+formatEther(amount)).toFixed(decimals || 3) : 0
 }

@@ -32,7 +32,7 @@ export const listenToRegistryEvents = async (
 ) => {
   const provider = new ethers.providers.Web3Provider(window.ethereum)
   const billingRegistry = FunctionsBillingRegistryFactory.connect(billingRegistryAddress, provider)
-  billingRegistry.on("BillingEnd", async (args) => {
+  billingRegistry.on("BillingEnd", async (...args) => {
     await handler(args)
   })
 }

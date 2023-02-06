@@ -25,7 +25,7 @@ export const Results = () => {
           <tbody>
             {transactions.map((transaction) => {
               return (
-                <tr>
+                <tr key={transaction.requestId}>
                   <td>
                     <div className="input-group udapp_nameNbuts">
                       <div className="udapp_titleText input-group-prepend">
@@ -42,7 +42,7 @@ export const Results = () => {
                   <td>{transaction.result?.toString()}</td>
                   <td>{transaction.error?.toString()}</td>
                   <td>{transaction.errorCallback}</td>
-                  <td>{formatAmount(transaction.totalCost)}</td>
+                  <td>{formatAmount(transaction.totalCost, 6)}</td>
                 </tr>
               )
             })}
