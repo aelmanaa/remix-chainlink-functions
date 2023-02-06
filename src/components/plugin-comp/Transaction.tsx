@@ -15,11 +15,15 @@ import {
   formatAddress,
   getSubscriptionIdOwner,
   getSubscriptionIdBalance,
+  formatAmount,
+  compareAccounts,
+  addConsumerToRegistry,
 } from "../../utils"
 import { CustomTooltip } from "./CustomTooltip"
 import Form from "react-bootstrap/esm/Form"
 import { Col, InputGroup, Row } from "react-bootstrap"
 import { networksData } from "../../data"
+import { BigNumber } from "ethers"
 
 export const Transaction = ({ logToRemixTerminal }: { logToRemixTerminal: LOG_TO_REMIX }) => {
   const dispatch = useDispatch()
@@ -29,9 +33,9 @@ export const Transaction = ({ logToRemixTerminal }: { logToRemixTerminal: LOG_TO
   const connected = useSelector((state: RootState) => state.chain.chainConnected)
   const selectedAccount = useSelector((state: RootState) => state.account.value.selectedAccount)
   const functionsConsumerAddress = useSelector((state: RootState) => state.functionsConsumer.address)
+  const subscription = useSelector((state: RootState) => state.functionsConsumer.subscription)
   const sourceFiles = useSelector((state: RootState) => state.remix.sourceFiles)
   useEffect(() => {
-    console.log("test")
     if (sourceFiles && Object.keys(sourceFiles).length > 0) {
       dispatch(
         setFunctionsConsumerExecuteRequest({
@@ -48,6 +52,7 @@ export const Transaction = ({ logToRemixTerminal }: { logToRemixTerminal: LOG_TO
     selectedSolidityContract,
     functionsConsumerAddress,
     sourceFiles,
+    subscription,
   ])
 
   const disableDeploy = () => {
@@ -60,6 +65,15 @@ export const Transaction = ({ logToRemixTerminal }: { logToRemixTerminal: LOG_TO
     if (!compiledSolidityFiles[selectedSolidityContract.fileName].compiled) return true
     const errors = errorsInFile(compiledSolidityFiles[selectedSolidityContract.fileName])
     if (errors.isError) return true
+    // check subscription
+    if (
+      !subscription ||
+      !subscription.id ||
+      !compareAccounts(subscription.owner, selectedAccount) ||
+      !BigNumber.from(subscription.balance || 0).gt(BigNumber.from(0))
+    )
+      return true
+
     return false
   }
 
@@ -68,56 +82,117 @@ export const Transaction = ({ logToRemixTerminal }: { logToRemixTerminal: LOG_TO
       <h2>Deploy & Run transactions</h2>
       <Form.Group>
         <Col>
-          <Form.Group className="udapp_multiArg">
-            <Form.Label htmlFor="consumer-subscriptionId"> subscriptionId: </Form.Label>
-            <CustomTooltip
-              placement="left-end"
-              tooltipId="udappContractActionsTooltip"
-              tooltipClasses="text-nowrap"
-              tooltipText="subscriptionId"
-            >
-              <Form.Control
-                id="consumer-subscriptionId"
-                placeholder="uint64"
-                onChange={async (e) => {
-                  e.preventDefault()
-                  try {
-                    const id = parseInt(e.target.value)
-                    const registryAddress = networksData[chain].functionsOracleRegistry
-                    const balance = await getSubscriptionIdBalance(id, registryAddress)
-                    const owner = await getSubscriptionIdOwner(id, registryAddress)
-                    dispatch(setFunctionsConsumerSubscription({ id, balance: balance.toHexString(), owner }))
-                  } catch (error) {
-                    // TODO
-                  }
-                }}
-              />
-            </CustomTooltip>
-          </Form.Group>
+          <Row>
+            <Col>
+              <Form.Group className="udapp_multiArg">
+                <Form.Label htmlFor="consumer-subscriptionId"> subscriptionId: </Form.Label>
+                <CustomTooltip
+                  placement="left-end"
+                  tooltipId="udappContractActionsTooltip"
+                  tooltipClasses="text-nowrap"
+                  tooltipText="subscriptionId"
+                >
+                  <Form.Control
+                    id="consumer-subscriptionId"
+                    placeholder="uint64"
+                    onChange={async (e) => {
+                      e.preventDefault()
+                      try {
+                        const id = parseInt(e.target.value)
+                        const registryAddress = networksData[chain].functionsOracleRegistry
+                        const balance = await getSubscriptionIdBalance(id, registryAddress)
+                        const owner = await getSubscriptionIdOwner(id, registryAddress)
+                        dispatch(setFunctionsConsumerSubscription({ id, balance: balance.toHexString(), owner }))
+                      } catch (error) {
+                        dispatch(setFunctionsConsumerSubscription({ balance: 0, owner: "" }))
+                      }
+                    }}
+                  />
+                </CustomTooltip>
+              </Form.Group>
+            </Col>
+            <Col>
+              <Form.Group className="udapp_multiArg">
+                <Form.Label htmlFor="consumer-subscriptionBalance"> subscription balance: </Form.Label>
+                <CustomTooltip
+                  placement="left-end"
+                  tooltipId="udappContractActionsTooltip"
+                  tooltipClasses="text-nowrap"
+                  tooltipText="subscriptionBalance"
+                >
+                  <Form.Control
+                    id="consumer-subscriptionBalance"
+                    readOnly
+                    defaultValue=""
+                    value={formatAmount(subscription.balance)}
+                  />
+                </CustomTooltip>
+              </Form.Group>
+            </Col>
+            <Col>
+              <Form.Group className="udapp_multiArg">
+                <Form.Label htmlFor="consumer-subscriptionOwnerCheck"> are you owner? </Form.Label>
+                <CustomTooltip
+                  placement="left-end"
+                  tooltipId="udappContractActionsTooltip"
+                  tooltipClasses="text-nowrap"
+                  tooltipText="subscriptionCheckOwner"
+                >
+                  <Form.Check
+                    id="consumer-subscriptionOwnerCheck"
+                    disabled
+                    type="switch"
+                    className="bg-light text-success  fas fa-check"
+                    checked={compareAccounts(subscription.owner, selectedAccount)}
+                  />
+                </CustomTooltip>
+              </Form.Group>
+            </Col>
+          </Row>
           <Button
             className="btn-warning"
             disabled={disableDeploy()}
             onClick={async (e) => {
               e.preventDefault()
-              console.log("aem transaction.tsx", selectedSolidityContract)
               const compiledContract =
                 compiledSolidityFiles[selectedSolidityContract.fileName].contracts[
                   selectedSolidityContract.contractName
                 ]
-              await logToRemixTerminal(
-                "info",
-                `Deploy contract ${selectedSolidityContract.contractName} from file ${selectedSolidityContract.fileName}`
-              )
-              const functionsConsumer = await deployFunctionsConsumer(
-                chain,
-                compiledContract.abi,
-                compiledContract.bytecode
-              )
-              await logToRemixTerminal(
-                "info",
-                `Contract ${selectedSolidityContract.contractName} from file ${selectedSolidityContract.fileName} deployed. Address: ${functionsConsumer.address}`
-              )
-              dispatch(setFunctionsConsumerAddress(functionsConsumer.address))
+              try {
+                await logToRemixTerminal(
+                  "info",
+                  `Deploy contract ${selectedSolidityContract.contractName} from file ${selectedSolidityContract.fileName}`
+                )
+                const functionsConsumer = await deployFunctionsConsumer(
+                  chain,
+                  compiledContract.abi,
+                  compiledContract.bytecode
+                )
+                await logToRemixTerminal(
+                  "info",
+                  `Contract ${selectedSolidityContract.contractName} from file ${selectedSolidityContract.fileName} deployed. Address: ${functionsConsumer.address}`
+                )
+                await logToRemixTerminal(
+                  "info",
+                  `Add consumer: ${functionsConsumer.address} to subscription ${subscription.id}`
+                )
+                if (subscription.id) {
+                  await addConsumerToRegistry(
+                    subscription.id,
+                    functionsConsumer.address,
+                    networksData[chain].functionsOracleRegistry
+                  )
+                  await logToRemixTerminal(
+                    "info",
+                    `Consumer: ${functionsConsumer.address} added to subscription ${subscription.id}`
+                  )
+                }
+
+                dispatch(setFunctionsConsumerAddress(functionsConsumer.address))
+              } catch (error) {
+                await logToRemixTerminal("error", `Error during deployment ${error}`)
+                dispatch(setFunctionsConsumerAddress(""))
+              }
             }}
           >
             Deploy

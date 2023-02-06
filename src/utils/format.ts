@@ -1,7 +1,9 @@
+import { BigNumberish } from "ethers"
+import { formatEther } from "ethers/lib/utils"
 import { chainsData, reverseChainLookup } from "../data"
 import { SUPPORTED_CHAIN } from "../models"
 
-export const compareAccounts = (accountA: string, accountB: string) => {
+export const compareAccounts = (accountA: string | undefined, accountB: string | undefined) => {
   if (!accountA || !accountB) return false
   if (accountA.toLowerCase() !== accountB.toLowerCase()) return false
   return true
@@ -24,4 +26,8 @@ export const chainNameFromChainId = (chainId: string) => {
 export const chainNameFromChainKey = (chainKey: SUPPORTED_CHAIN) => {
   if (!chainKey) return ""
   return chainsData[chainKey].name
+}
+
+export const formatAmount = (amount: BigNumberish | undefined) => {
+  return amount ? (+formatEther(amount)).toFixed(3) : 0
 }

@@ -3,11 +3,12 @@ import { Table } from "react-bootstrap"
 import { useSelector, useDispatch } from "react-redux"
 import { RootState } from "../../redux/store"
 import { changeLinkBalance, changeNativeBalance } from "../../redux/reducers"
-import { BigNumberish, utils } from "ethers"
+import { BigNumberish } from "ethers"
 import { chainsData, networksData } from "../../data"
 import {
   clearLinkEvents,
   clearNativeBalanceEvent,
+  formatAmount,
   getLinkBalance,
   getNativeBalance,
   registerLinkEvent,
@@ -69,10 +70,9 @@ export const Balance = () => {
         <tr>
           <td>Current Balance</td>
           <td>
-            {balance.native ? (+utils.formatEther(balance.native)).toFixed(2) : 0}{" "}
-            {chain ? chainsData[chain].native : ""}
+            {formatAmount(balance.native)} {chain ? chainsData[chain].native : ""}
           </td>
-          <td>{balance.link ? (+utils.formatEther(balance.link)).toFixed(2) : 0} LINK</td>
+          <td>{formatAmount(balance.link)} LINK</td>
         </tr>
       </tbody>
     </Table>
