@@ -33,10 +33,7 @@ export const executeRequest = async (
 ) => {
   const provider = new ethers.providers.Web3Provider(window.ethereum)
   const signer = provider.getSigner()
-  const functionsConsumer = FunctionsConsumerFactory.connect(
-    "0xa9b286E892d579dc727c79D3be9b01949796240A" || functionsConsumerAddress,
-    signer
-  )
+  const functionsConsumer = FunctionsConsumerFactory.connect(functionsConsumerAddress, signer)
   console.log("aem debug executeREquest")
   console.log(secrets)
   console.log(args)
