@@ -1,5 +1,5 @@
 import { useEffect } from "react"
-import { Alert } from "react-bootstrap"
+import { Alert, Col, Row } from "react-bootstrap"
 import { useDispatch, useSelector } from "react-redux"
 import {
   initializeAccounts,
@@ -79,9 +79,19 @@ export const Context = () => {
   return (
     <div className="border-bottom">
       {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
-      <Account />
-      <Networks />
-      <Balance />
+      <Row>
+        <Col>
+          <Account />
+        </Col>
+        <Col>
+          <Networks />
+        </Col>
+      </Row>
+      <Row>
+        <Col>
+          <Balance />
+        </Col>
+      </Row>
     </div>
   )
 }

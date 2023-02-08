@@ -33,7 +33,6 @@ import {
   removeAllRegistryListeners,
   listenToRegistryEvents,
 } from "../../utils"
-import { CustomTooltip } from "./CustomTooltip"
 import Form from "react-bootstrap/esm/Form"
 import { Col, InputGroup, Row } from "react-bootstrap"
 import { networksData } from "../../data"
@@ -132,66 +131,40 @@ export const Transaction = ({
             <Col>
               <Form.Group className="udapp_multiArg">
                 <Form.Label htmlFor="consumer-subscriptionId"> subscriptionId: </Form.Label>
-                <CustomTooltip
-                  placement="left-end"
-                  tooltipId="udappContractActionsTooltip"
-                  tooltipClasses="text-nowrap"
-                  tooltipText="subscriptionId"
-                >
-                  <Form.Control
-                    id="consumer-subscriptionId"
-                    placeholder="uint64"
-                    onChange={async (e) => {
-                      e.preventDefault()
-                      try {
-                        const id = parseInt(e.target.value)
-                        const registryAddress = networksData[chain].functionsOracleRegistry
-                        const balance = await getSubscriptionIdBalance(id, registryAddress)
-                        const owner = await getSubscriptionIdOwner(id, registryAddress)
-                        dispatch(setFunctionsConsumerSubscription({ id, balance: balance.toHexString(), owner }))
-                      } catch (error) {
-                        dispatch(setFunctionsConsumerSubscription({ balance: 0, owner: "" }))
-                      }
-                    }}
-                  />
-                </CustomTooltip>
+                <Form.Control
+                  id="consumer-subscriptionId"
+                  placeholder="uint64"
+                  onChange={async (e) => {
+                    e.preventDefault()
+                    try {
+                      const id = parseInt(e.target.value)
+                      const registryAddress = networksData[chain].functionsOracleRegistry
+                      const balance = await getSubscriptionIdBalance(id, registryAddress)
+                      const owner = await getSubscriptionIdOwner(id, registryAddress)
+                      dispatch(setFunctionsConsumerSubscription({ id, balance: balance.toHexString(), owner }))
+                    } catch (error) {
+                      dispatch(setFunctionsConsumerSubscription({ balance: 0, owner: "" }))
+                    }
+                  }}
+                />
               </Form.Group>
             </Col>
             <Col>
               <Form.Group className="udapp_multiArg">
                 <Form.Label htmlFor="consumer-subscriptionBalance"> subscription balance: </Form.Label>
-                <CustomTooltip
-                  placement="left-end"
-                  tooltipId="udappContractActionsTooltip"
-                  tooltipClasses="text-nowrap"
-                  tooltipText="subscriptionBalance"
-                >
-                  <Form.Control
-                    id="consumer-subscriptionBalance"
-                    readOnly
-                    defaultValue=""
-                    value={formatAmount(subscription.balance, 6) + " LINK"}
-                  />
-                </CustomTooltip>
+                <Form.Text id="consumer-subscriptionBalance">{formatAmount(subscription.balance, 6)} LINK</Form.Text>
               </Form.Group>
             </Col>
             <Col>
               <Form.Group className="udapp_multiArg">
                 <Form.Label htmlFor="consumer-subscriptionOwnerCheck"> are you owner? </Form.Label>
-                <CustomTooltip
-                  placement="left-end"
-                  tooltipId="udappContractActionsTooltip"
-                  tooltipClasses="text-nowrap"
-                  tooltipText="subscriptionCheckOwner"
-                >
-                  <Form.Check
-                    id="consumer-subscriptionOwnerCheck"
-                    disabled
-                    type="switch"
-                    className="bg-light text-success  fas fa-check"
-                    checked={compareAccounts(subscription.owner, selectedAccount)}
-                  />
-                </CustomTooltip>
+                <Form.Check
+                  id="consumer-subscriptionOwnerCheck"
+                  disabled
+                  type="switch"
+                  className="bg-light text-success  fas fa-check"
+                  checked={compareAccounts(subscription.owner, selectedAccount)}
+                />
               </Form.Group>
             </Col>
           </Row>
@@ -289,165 +262,130 @@ export const Transaction = ({
                           <Col>
                             <Form.Group className="udapp_multiArg">
                               <Form.Label htmlFor="executeRequest-source"> source: </Form.Label>
-                              <CustomTooltip
-                                placement="left-end"
-                                tooltipId="udappContractActionsTooltip"
-                                tooltipClasses="text-nowrap"
-                                tooltipText="source"
+                              <Form.Select
+                                className="custom-select"
+                                placeholder="string"
+                                style={{ display: "block" }}
+                                id="executeRequest-source"
+                                onClick={async (event) => {
+                                  event.preventDefault()
+                                  const samples = await getJavascriptSources()
+                                  dispatch(setSourceFiles(samples))
+                                }}
+                                onChange={(event) => {
+                                  event.preventDefault()
+                                  const selectedIndex = event.target.options.selectedIndex
+                                  const key = event.target.options[selectedIndex].getAttribute("data-key") as string
+                                  dispatch(
+                                    setFunctionsConsumerExecuteRequest({
+                                      sourcePath: key,
+                                    })
+                                  )
+                                }}
                               >
-                                <Form.Select
-                                  className="custom-select"
-                                  placeholder="string"
-                                  style={{ display: "block" }}
-                                  id="executeRequest-source"
-                                  onClick={async (event) => {
-                                    event.preventDefault()
-                                    const samples = await getJavascriptSources()
-                                    dispatch(setSourceFiles(samples))
-                                  }}
-                                  onChange={(event) => {
-                                    event.preventDefault()
-                                    const selectedIndex = event.target.options.selectedIndex
-                                    const key = event.target.options[selectedIndex].getAttribute("data-key") as string
-                                    dispatch(
-                                      setFunctionsConsumerExecuteRequest({
-                                        sourcePath: key,
-                                      })
+                                {sourceFiles &&
+                                  Object.keys(sourceFiles).map((key) => {
+                                    return (
+                                      <option key={key} data-key={key}>
+                                        {sourceFiles[key].fileName}
+                                      </option>
                                     )
-                                  }}
-                                >
-                                  {sourceFiles &&
-                                    Object.keys(sourceFiles).map((key) => {
-                                      return (
-                                        <option key={key} data-key={key}>
-                                          {sourceFiles[key].fileName}
-                                        </option>
-                                      )
-                                    })}
-                                </Form.Select>
-                              </CustomTooltip>
+                                  })}
+                              </Form.Select>
                             </Form.Group>
                           </Col>
                           <Col>
                             <Form.Group className="udapp_multiArg">
                               <Form.Label htmlFor="executeRequest-args"> args: </Form.Label>
-                              <CustomTooltip
-                                placement="left-end"
-                                tooltipId="udappContractActionsTooltip"
-                                tooltipClasses="text-nowrap"
-                                tooltipText="args"
-                              >
-                                <Form.Control
-                                  id="executeRequest-args"
-                                  placeholder="string[]"
-                                  onChange={(e) => {
-                                    e.preventDefault()
-                                    try {
-                                      const value = JSON.parse(e.target.value) as string[]
-                                      dispatch(
-                                        setFunctionsConsumerExecuteRequest({
-                                          args: value,
-                                        })
-                                      )
-                                    } catch (err) {}
-                                  }}
-                                />
-                              </CustomTooltip>
+                              <Form.Control
+                                id="executeRequest-args"
+                                placeholder="string[]"
+                                onChange={(e) => {
+                                  e.preventDefault()
+                                  try {
+                                    const value = JSON.parse(e.target.value) as string[]
+                                    dispatch(
+                                      setFunctionsConsumerExecuteRequest({
+                                        args: value,
+                                      })
+                                    )
+                                  } catch (err) {}
+                                }}
+                              />
                             </Form.Group>
                           </Col>
                           <Col>
                             <Form.Group className="udapp_multiArg">
                               <Form.Label htmlFor="executeRequest-expectedResult"> Response decoder: </Form.Label>
-                              <CustomTooltip
-                                placement="left-end"
-                                tooltipId="udappContractActionsTooltip"
-                                tooltipClasses="text-nowrap"
-                                tooltipText="expectedResult"
+                              <Form.Select
+                                className="custom-select"
+                                style={{ display: "block" }}
+                                id="executeRequest-expectedResult"
+                                onChange={(event) => {
+                                  event.preventDefault()
+                                  const selectedIndex = event.target.options.selectedIndex
+                                  const key = event.target.options[selectedIndex].getAttribute(
+                                    "data-key"
+                                  ) as unknown as EXPECTED_RETURN_TYPE
+                                  dispatch(
+                                    setFunctionsConsumerExecuteRequest({
+                                      expectedReturnType: key,
+                                    })
+                                  )
+                                }}
                               >
-                                <Form.Select
-                                  className="custom-select"
-                                  style={{ display: "block" }}
-                                  id="executeRequest-expectedResult"
-                                  onChange={(event) => {
-                                    event.preventDefault()
-                                    const selectedIndex = event.target.options.selectedIndex
-                                    const key = event.target.options[selectedIndex].getAttribute(
-                                      "data-key"
-                                    ) as unknown as EXPECTED_RETURN_TYPE
-                                    dispatch(
-                                      setFunctionsConsumerExecuteRequest({
-                                        expectedReturnType: key,
-                                      })
+                                {Object.keys(EXPECTED_RETURN_TYPE).map((key) => {
+                                  const keyNum = Number(key)
+                                  if (!isNaN(keyNum))
+                                    return (
+                                      <option key={keyNum} data-key={keyNum}>
+                                        {EXPECTED_RETURN_TYPE[keyNum]}
+                                      </option>
                                     )
-                                  }}
-                                >
-                                  {Object.keys(EXPECTED_RETURN_TYPE).map((key) => {
-                                    const keyNum = Number(key)
-                                    if (!isNaN(keyNum))
-                                      return (
-                                        <option key={keyNum} data-key={keyNum}>
-                                          {EXPECTED_RETURN_TYPE[keyNum]}
-                                        </option>
-                                      )
-                                    return null
-                                  })}
-                                </Form.Select>
-                              </CustomTooltip>
+                                  return null
+                                })}
+                              </Form.Select>
                             </Form.Group>
                           </Col>
                         </Row>
                         <Form.Group className="udapp_multiArg">
                           <Form.Label htmlFor="executeRequest-secrets"> secrets: </Form.Label>
-                          <CustomTooltip
-                            placement="left-end"
-                            tooltipId="udappContractActionsTooltip"
-                            tooltipClasses="text-nowrap"
-                            tooltipText="secrets"
-                          >
-                            <InputGroup.Text id="executeRequest-secrets">bytes</InputGroup.Text>
-                          </CustomTooltip>
+                          <InputGroup.Text id="executeRequest-secrets">bytes</InputGroup.Text>
                         </Form.Group>
                       </Col>
                     </Form.Group>
                     <Col>
                       <Form.Group className="d-flex udapp_group udapp_multiArg">
-                        <CustomTooltip
-                          placement={"right"}
-                          tooltipClasses="text-nowrap"
-                          tooltipId="remixUdappInstanceButtonTooltip"
-                          tooltipText="executeRequest - transact (not payable)"
-                        >
-                          <Button
-                            onClick={async (e) => {
-                              e.preventDefault()
-                              await logToRemixTerminal("info", `Execute request.`)
-                              const [requestId, transactionhash] = await executeRequest(
-                                functionsConsumerAddress,
-                                await getFileContent(request.sourcePath || ""),
-                                request.secrets || "",
-                                request.secretLocation || Location.Inline,
-                                request.args || [""],
-                                subscription.id || "",
-                                100_000
-                              )
-                              await logToRemixTerminal(
-                                "info",
-                                `Execute request successful. transaction hash: ${transactionhash}`
-                              )
+                        <Button
+                          onClick={async (e) => {
+                            e.preventDefault()
+                            await logToRemixTerminal("info", `Execute request.`)
+                            const [requestId, transactionhash] = await executeRequest(
+                              functionsConsumerAddress,
+                              await getFileContent(request.sourcePath || ""),
+                              request.secrets || "",
+                              request.secretLocation || Location.Inline,
+                              request.args || [""],
+                              subscription.id || "",
+                              100_000
+                            )
+                            await logToRemixTerminal(
+                              "info",
+                              `Execute request successful. transaction hash: ${transactionhash}`
+                            )
 
-                              dispatch(
-                                setTransaction({
-                                  requestId,
-                                  expectedReturnType: request.expectedReturnType,
-                                  status: TRANSACTION_STATUS.pending,
-                                })
-                              )
-                            }}
-                            className="udapp_instanceButton btn-warning"
-                          >
-                            transact
-                          </Button>
-                        </CustomTooltip>
+                            dispatch(
+                              setTransaction({
+                                requestId,
+                                expectedReturnType: request.expectedReturnType,
+                                status: TRANSACTION_STATUS.pending,
+                              })
+                            )
+                          }}
+                          className="udapp_instanceButton btn-warning"
+                        >
+                          transact
+                        </Button>
                       </Form.Group>
                     </Col>
                   </div>
