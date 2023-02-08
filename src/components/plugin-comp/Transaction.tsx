@@ -32,6 +32,7 @@ import {
   clearFunctionsConsumerListeners,
   removeAllRegistryListeners,
   listenToRegistryEvents,
+  formatError,
 } from "../../utils"
 import Form from "react-bootstrap/esm/Form"
 import { Col, InputGroup, Row } from "react-bootstrap"
@@ -200,7 +201,7 @@ export const Transaction = ({
                       requestId: args[0],
                       result: args[1],
                       error: args[2],
-                      status: args[2].toString() ? TRANSACTION_STATUS.fail : TRANSACTION_STATUS.success,
+                      status: formatError(args[2]) ? TRANSACTION_STATUS.fail : TRANSACTION_STATUS.success,
                     })
                   )
                 })
@@ -263,6 +264,7 @@ export const Transaction = ({
                                 placeholder="string"
                                 style={{ display: "block" }}
                                 id="executeRequest-source"
+                                defaultValue={request.sourcePath ? sourceFiles[request.sourcePath].fileName : ""}
                                 onClick={async (event) => {
                                   event.preventDefault()
                                   const samples = await getJavascriptSources()

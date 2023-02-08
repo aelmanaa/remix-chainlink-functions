@@ -62,6 +62,18 @@ export const formatStatus = (status: TRANSACTION_STATUS | undefined) => {
   }
 }
 
+export const getStatusClassName = (status: TRANSACTION_STATUS | undefined) => {
+  if (status === undefined) return ""
+  switch (Number(status)) {
+    case TRANSACTION_STATUS.pending:
+      return ""
+    case TRANSACTION_STATUS.success:
+      return "text-success"
+    case TRANSACTION_STATUS.fail:
+      return "text-danger"
+  }
+}
+
 const signedInt256toBigInt = (hex: string) => {
   const binary = BigInt(hex).toString(2).padStart(256, "0")
   // if the first bit is 0, number is positive

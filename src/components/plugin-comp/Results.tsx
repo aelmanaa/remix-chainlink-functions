@@ -1,11 +1,13 @@
 import Button from "react-bootstrap/esm/Button"
 import Form from "react-bootstrap/esm/Form"
+import Spinner from "react-bootstrap/esm/Spinner"
 import Table from "react-bootstrap/esm/Table"
 import CopyToClipboard from "react-copy-to-clipboard"
 import { useSelector } from "react-redux"
+import { TRANSACTION_STATUS } from "../../models"
 
 import { RootState } from "../../redux/store"
-import { formatAmount, formatError, formatRequestId, formatResult, formatStatus } from "../../utils"
+import { formatAmount, formatError, formatRequestId, formatResult, formatStatus, getStatusClassName } from "../../utils"
 
 export const Results = () => {
   const transactions = useSelector((state: RootState) => state.functionsConsumer.transactions)
@@ -38,7 +40,13 @@ export const Results = () => {
                     </div>
                   </td>
                   <td>
-                    <Form.Label className="input-group-text">{formatStatus(transaction.status)}</Form.Label>
+                    {transaction.status === TRANSACTION_STATUS.pending ? (
+                      <Spinner animation="border" variant="warning" />
+                    ) : (
+                      <Form.Label className={`input-group-text ${getStatusClassName(transaction.status)}`}>
+                        {formatStatus(transaction.status)}
+                      </Form.Label>
+                    )}
                   </td>
                   <td>
                     {formatError(transaction.error).toString()
