@@ -59,7 +59,7 @@ export const Transaction = ({
   const request = useSelector((state: RootState) => state.functionsConsumer.request)
   const sourceFiles = useSelector((state: RootState) => state.remix.sourceFiles)
   useEffect(() => {
-    if (sourceFiles && Object.keys(sourceFiles).length > 0) {
+    if (sourceFiles && Object.keys(sourceFiles).length > 0 && !request.sourcePath) {
       dispatch(
         setFunctionsConsumerExecuteRequest({
           sourcePath: Object.keys(sourceFiles)[0],
@@ -98,6 +98,7 @@ export const Transaction = ({
     sourceFiles,
     subscription,
     transactions,
+    request.sourcePath,
   ])
 
   const disableDeploy = () => {
@@ -199,7 +200,7 @@ export const Transaction = ({
                       requestId: args[0],
                       result: args[1],
                       error: args[2],
-                      status: args[1] ? TRANSACTION_STATUS.success : TRANSACTION_STATUS.fail,
+                      status: args[2].toString() ? TRANSACTION_STATUS.fail : TRANSACTION_STATUS.success,
                     })
                   )
                 })
@@ -235,16 +236,12 @@ export const Transaction = ({
         <div className="instance udapp_instance udapp_run-instance border-dark">
           <div className="udapp_title pb-0 alert alert-secondary">
             <div className="input-group udapp_nameNbuts">
-              <div className="udapp_titleText input-group-prepend">
-                <span className="input-group-text udapp_spanTitleText">
-                  {selectedSolidityContract.contractName} at {formatAddress(functionsConsumerAddress)}
-                </span>
-              </div>
-              <div className="btn-group">
-                <CopyToClipboard text={functionsConsumerAddress}>
-                  <Button className="p-1 btn-secondary">Copy</Button>
-                </CopyToClipboard>
-              </div>
+              <Form.Text className="input-group-text udapp_spanTitleText">
+                {selectedSolidityContract.contractName} at {formatAddress(functionsConsumerAddress)}
+              </Form.Text>
+              <CopyToClipboard text={functionsConsumerAddress}>
+                <Button className="p-1 btn-secondary">Copy</Button>
+              </CopyToClipboard>
             </div>
           </div>
           <div className="udapp_cActionsWrapper">
@@ -254,7 +251,6 @@ export const Transaction = ({
                   <div className="udapp_contractActionsContainerMultiInner text-dark">
                     <div className="udapp_multiHeader">
                       <div className="udapp_multiTitle run-instance-multi-title pt-3">executeRequest</div>
-                      <i className="fas fa-angle-up udapp_methCaret"></i>
                     </div>
                     <Form.Group>
                       <Col>

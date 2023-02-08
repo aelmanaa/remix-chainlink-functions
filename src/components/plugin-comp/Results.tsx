@@ -40,7 +40,11 @@ export const Results = () => {
                   <td>
                     <Form.Label className="input-group-text">{formatStatus(transaction.status)}</Form.Label>
                   </td>
-                  <td>{formatResult(transaction.result, transaction.expectedReturnType)}</td>
+                  <td>
+                    {formatError(transaction.error).toString()
+                      ? ""
+                      : formatResult(transaction.result, transaction.expectedReturnType)}
+                  </td>
                   <td>{transaction.errorCallback ? "error callback" : formatError(transaction.error)}</td>
                   <td>{formatAmount(transaction.totalCost, 6)}</td>
                 </tr>
