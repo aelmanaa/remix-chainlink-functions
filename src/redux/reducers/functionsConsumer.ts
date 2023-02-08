@@ -28,6 +28,9 @@ export const functionsConsumerSlice = createSlice({
     setAddress: (state, action: PayloadAction<string>) => {
       state.address = action.payload
     },
+    initializeState: (state) => {
+      state = initialState
+    },
     setRequest: (state, action: PayloadAction<REQUEST>) => {
       state.request = { ...state.request, ...action.payload }
     },
@@ -50,6 +53,7 @@ export const {
   setRequest: setFunctionsConsumerExecuteRequest,
   setSubscription: setFunctionsConsumerSubscription,
   setTransaction,
+  initializeState: initializeFunctionsConsumerState,
 } = functionsConsumerSlice.actions
 
 export default functionsConsumerSlice.reducer

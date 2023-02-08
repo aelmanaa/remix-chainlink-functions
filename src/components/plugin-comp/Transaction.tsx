@@ -11,6 +11,7 @@ import {
   TRANSACTION_STATUS,
 } from "../../models"
 import {
+  initializeFunctionsConsumerState,
   setFunctionsConsumerAddress,
   setFunctionsConsumerExecuteRequest,
   setFunctionsConsumerSubscription,
@@ -74,8 +75,13 @@ export const Transaction = ({
           errorCallback: !(args[5] as boolean),
           totalCost: ((args[4] as BigNumberish) || "").toString(),
         }
-        if (args[5] as boolean) payload.status = TRANSACTION_STATUS.fail
+        const id = args[1] as string
+        if (payload.errorCallback) payload.status = TRANSACTION_STATUS.fail
         dispatch(setTransaction(payload))
+
+        // refresh subscription balance
+        const balance = await getSubscriptionIdBalance(id, networksData[chain].functionsOracleRegistry)
+        dispatch(setFunctionsConsumerSubscription({ balance: balance.toHexString() }))
       })
     }
     return () => {
@@ -164,7 +170,7 @@ export const Transaction = ({
                     id="consumer-subscriptionBalance"
                     readOnly
                     defaultValue=""
-                    value={formatAmount(subscription.balance)}
+                    value={formatAmount(subscription.balance, 6) + " LINK"}
                   />
                 </CustomTooltip>
               </Form.Group>
@@ -212,15 +218,7 @@ export const Transaction = ({
                   "info",
                   `Contract ${selectedSolidityContract.contractName} from file ${selectedSolidityContract.fileName} deployed. Address: ${functionsConsumer.address}`
                 )
-                functionsConsumer.on("RequestSent", (requestId) => {
-                  dispatch(
-                    setTransaction({
-                      requestId,
-                      expectedReturnType: request.expectedReturnType,
-                      status: TRANSACTION_STATUS.pending,
-                    })
-                  )
-                })
+
                 functionsConsumer.on("OCRResponse", async (...args) => {
                   await logToRemixTerminal("info", `Request ${args[0]} fulfilled!`)
                   dispatch(
@@ -247,11 +245,11 @@ export const Transaction = ({
                     `Consumer: ${functionsConsumer.address} added to subscription ${subscription.id}`
                   )
                 }
-
+                dispatch(initializeFunctionsConsumerState())
                 dispatch(setFunctionsConsumerAddress(functionsConsumer.address))
               } catch (error) {
                 await logToRemixTerminal("error", `Error during deployment ${error}`)
-                dispatch(setFunctionsConsumerAddress(""))
+                dispatch(initializeFunctionsConsumerState())
               }
             }}
           >
@@ -423,7 +421,7 @@ export const Transaction = ({
                             onClick={async (e) => {
                               e.preventDefault()
                               await logToRemixTerminal("info", `Execute request.`)
-                              const transactionhash = await executeRequest(
+                              const [requestId, transactionhash] = await executeRequest(
                                 functionsConsumerAddress,
                                 await getFileContent(request.sourcePath || ""),
                                 request.secrets || "",
@@ -435,6 +433,14 @@ export const Transaction = ({
                               await logToRemixTerminal(
                                 "info",
                                 `Execute request successful. transaction hash: ${transactionhash}`
+                              )
+
+                              dispatch(
+                                setTransaction({
+                                  requestId,
+                                  expectedReturnType: request.expectedReturnType,
+                                  status: TRANSACTION_STATUS.pending,
+                                })
                               )
                             }}
                             className="udapp_instanceButton btn-warning"

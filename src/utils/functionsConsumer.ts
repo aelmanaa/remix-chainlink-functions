@@ -23,7 +23,15 @@ export const clearFunctionsConsumerListeners = async (functionsConsumerAddress: 
   functionsConsumer.removeAllListeners()
 }
 
-export const executeRequest = async (
+export const executeRequest: (
+  functionsConsumerAddress: string,
+  source: string,
+  secrets: ethers.utils.BytesLike,
+  secretsLocation: Location,
+  args: string[],
+  subscriptionId: ethers.BigNumberish,
+  gasLimit: ethers.BigNumberish
+) => Promise<[string, string]> = async (
   functionsConsumerAddress: string,
   source: string,
   secrets: ethers.utils.BytesLike,
@@ -48,5 +56,8 @@ export const executeRequest = async (
       }
     )
   ).wait()
-  return receipt.transactionHash
+  const event = receipt.events?.find((event) => event.event === "RequestSent")
+  const requestId: string = event?.args?.[0] || ""
+
+  return [requestId, receipt.transactionHash]
 }
