@@ -1,9 +1,11 @@
 import Button from "react-bootstrap/esm/Button"
+import Form from "react-bootstrap/esm/Form"
 import Table from "react-bootstrap/esm/Table"
 import CopyToClipboard from "react-copy-to-clipboard"
 import { useSelector } from "react-redux"
+
 import { RootState } from "../../redux/store"
-import { formatAmount } from "../../utils"
+import { formatAmount, formatError, formatRequestId, formatResult, formatStatus } from "../../utils"
 
 export const Results = () => {
   const transactions = useSelector((state: RootState) => state.functionsConsumer.transactions)
@@ -14,11 +16,10 @@ export const Results = () => {
         <Table striped bordered hover size="sm">
           <thead>
             <tr>
-              <th>Transaction</th>
+              <th>RequestId</th>
               <th>Status</th>
               <th>Result</th>
               <th>Error</th>
-              <th>Callback error</th>
               <th>Total costs(LINK)</th>
             </tr>
           </thead>
@@ -29,19 +30,18 @@ export const Results = () => {
                   <td>
                     <div className="input-group udapp_nameNbuts">
                       <div className="udapp_titleText input-group-prepend">
-                        <span className="input-group-text udapp_spanTitleText">{transaction.requestId}</span>
+                        <Form.Label className="input-group-text">{formatRequestId(transaction.requestId)}</Form.Label>
                       </div>
-                      <div className="btn-group">
-                        <CopyToClipboard text={transaction.requestId}>
-                          <Button className="p-1 btn-secondary">Copy</Button>
-                        </CopyToClipboard>
-                      </div>
+                      <CopyToClipboard text={transaction.requestId}>
+                        <Button className="far fa-copy ml-1 p-2">copy</Button>
+                      </CopyToClipboard>
                     </div>
                   </td>
-                  <td>{transaction.status}</td>
-                  <td>{transaction.result?.toString()}</td>
-                  <td>{transaction.error?.toString()}</td>
-                  <td>{transaction.errorCallback}</td>
+                  <td>
+                    <Form.Label className="input-group-text">{formatStatus(transaction.status)}</Form.Label>
+                  </td>
+                  <td>{formatResult(transaction.result, transaction.expectedReturnType)}</td>
+                  <td>{transaction.errorCallback ? "error callback" : formatError(transaction.error)}</td>
                   <td>{formatAmount(transaction.totalCost, 6)}</td>
                 </tr>
               )

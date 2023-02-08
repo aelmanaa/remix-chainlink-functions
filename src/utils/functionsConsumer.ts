@@ -35,13 +35,6 @@ export const executeRequest = async (
   const provider = new ethers.providers.Web3Provider(window.ethereum)
   const signer = provider.getSigner()
   const functionsConsumer = FunctionsConsumerFactory.connect(functionsConsumerAddress, signer)
-  console.log("aem debug executeREquest")
-  console.log(secrets)
-  console.log(secretsLocation)
-  console.log(args)
-  console.log(subscriptionId)
-  console.log(gasLimit)
-  console.log(source)
   const receipt = await (
     await functionsConsumer.executeRequest(
       source,

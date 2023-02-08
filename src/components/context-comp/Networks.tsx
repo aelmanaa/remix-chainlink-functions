@@ -31,7 +31,6 @@ export const Networks = () => {
           event.preventDefault()
           const selectedIndex = event.target.options.selectedIndex
           const chain = event.target.options[selectedIndex].getAttribute("data-key") as SUPPORTED_CHAIN
-          console.log(event.target.options[selectedIndex].getAttribute("data-key"))
           dispatch(changeChain(chain))
         }}
       >

@@ -27,10 +27,10 @@ export enum TRANSACTION_STATUS {
 }
 
 export enum EXPECTED_RETURN_TYPE {
+  Buffer,
   uint256,
   int256,
   string,
-  Buffer,
 }
 
 export interface TRANSACTION {

@@ -68,7 +68,6 @@ export const Transaction = ({
     }
     if (transactions && transactions.length > 0) {
       listenToRegistryEvents(networksData[chain].functionsOracleRegistry, async (args) => {
-        console.log("aem registry events", args)
         if (transactions.findIndex((element) => element.requestId === (args[0] as string)) === -1) return
         const payload: TRANSACTION = {
           requestId: args[0] as string,
@@ -377,7 +376,6 @@ export const Transaction = ({
                                     const key = event.target.options[selectedIndex].getAttribute(
                                       "data-key"
                                     ) as unknown as EXPECTED_RETURN_TYPE
-                                    console.log("aem enum expected type", key)
                                     dispatch(
                                       setFunctionsConsumerExecuteRequest({
                                         expectedReturnType: key,
@@ -386,10 +384,11 @@ export const Transaction = ({
                                   }}
                                 >
                                   {Object.keys(EXPECTED_RETURN_TYPE).map((key) => {
-                                    if (isNaN(Number(key)))
+                                    const keyNum = Number(key)
+                                    if (!isNaN(keyNum))
                                       return (
-                                        <option key={key.toString()} data-key={key}>
-                                          {key}
+                                        <option key={keyNum} data-key={keyNum}>
+                                          {EXPECTED_RETURN_TYPE[keyNum]}
                                         </option>
                                       )
                                     return null
