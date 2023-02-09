@@ -8,15 +8,15 @@ export const getNativeBalance = async (account: string) => {
   })) as BigNumberish
 }
 
-export const registerNativeBalanceEvent = (account: string, handler: (balance: BigNumberish) => void) => {
-  const provider = new ethers.providers.Web3Provider(window.ethereum)
+export const registerNativeBalanceEvent = (account: string, balanceHandler: (balance: BigNumberish) => void) => {
+  const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
   const listener: ethers.providers.Listener = async (blockNumber: ethers.providers.BlockTag) => {
     const blockWithTransactions = await provider.getBlockWithTransactions(blockNumber)
     const transactions = blockWithTransactions.transactions
     for (const transaction of transactions) {
       if (compareAccounts(transaction.from, account) || compareAccounts(transaction.to || "", account)) {
         const nativeBalance = await getNativeBalance(account)
-        handler(nativeBalance)
+        balanceHandler(nativeBalance)
       }
     }
   }
@@ -25,12 +25,12 @@ export const registerNativeBalanceEvent = (account: string, handler: (balance: B
 }
 
 export const clearNativeBalanceEvent = (listener: ethers.providers.Listener) => {
-  const provider = new ethers.providers.Web3Provider(window.ethereum)
+  const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
   provider.removeListener("block", listener)
 }
 
 export const getLinkBalance = async (account: string, linkTokenAddress: string) => {
-  const provider = new ethers.providers.Web3Provider(window.ethereum)
+  const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
   const linkToken = LinkTokenFactory.connect(linkTokenAddress, provider)
   const linkBalance = await linkToken.balanceOf(account)
   return linkBalance
@@ -39,20 +39,20 @@ export const getLinkBalance = async (account: string, linkTokenAddress: string) 
 export const registerLinkEvent = async (
   account: string,
   linkTokenAddress: string,
-  handler: (balance: BigNumberish) => void
+  balanceHandler: (balance: BigNumberish) => void
 ) => {
-  const provider = new ethers.providers.Web3Provider(window.ethereum)
+  const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
   const linkToken = LinkTokenFactory.connect(linkTokenAddress, provider)
   linkToken.on("Transfer(address,address,uint256)", async (from, to, value, event) => {
     if (compareAccounts(from, account) || compareAccounts(to, account)) {
       const linkBalance = await getLinkBalance(account, linkTokenAddress)
-      handler(linkBalance.toHexString())
+      balanceHandler(linkBalance.toHexString())
     }
   })
 }
 
 export const clearLinkEvents = (linkTokenAddress: string) => {
-  const provider = new ethers.providers.Web3Provider(window.ethereum)
+  const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
   const linkToken = LinkTokenFactory.connect(linkTokenAddress, provider)
   linkToken.removeAllListeners()
 }

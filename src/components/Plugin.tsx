@@ -4,20 +4,18 @@ import { Results, Solidity, Transaction } from "./plugin-comp"
 import { FunctionsPlugin } from "../remix"
 import { useDispatch } from "react-redux"
 import { solidityFileCompiled, newSolidityFile, setSourceFiles } from "../redux/reducers"
-import { AnyAction, Dispatch } from "redux"
-import { ActionCreatorWithPayload } from "@reduxjs/toolkit"
+import { dispatchHandler } from "../models"
 
 export const Plugin = () => {
   const dispatch = useDispatch()
-  const handler = <T,>(dispatcher: Dispatch<AnyAction>, reducer: ActionCreatorWithPayload<T>) => {
-    return (payload: T) => {
-      dispatcher(reducer(payload))
-    }
-  }
-  const client = useRef(new FunctionsPlugin(handler(dispatch, solidityFileCompiled)))
+
+  const client = useRef(new FunctionsPlugin(dispatchHandler(dispatch, solidityFileCompiled)))
 
   const loadSamples = async () =>
-    await client.current.loadSamples(handler(dispatch, newSolidityFile), handler(dispatch, setSourceFiles))
+    await client.current.loadSamples(
+      dispatchHandler(dispatch, newSolidityFile),
+      dispatchHandler(dispatch, setSourceFiles)
+    )
 
   useEffect(() => {
     const currentClient = client.current

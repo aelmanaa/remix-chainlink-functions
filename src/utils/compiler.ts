@@ -1,6 +1,13 @@
 import { COMPILED_FILE } from "../models"
 
 export const errorsInFile = (compiledFile: COMPILED_FILE) => {
+  if (!compiledFile)
+    return {
+      isError: false,
+      isWarning: false,
+      errorMessages: [],
+      warningMessages: [],
+    }
   const errors = compiledFile.errors
   if (!errors)
     return {

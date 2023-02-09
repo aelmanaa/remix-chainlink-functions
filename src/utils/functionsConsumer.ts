@@ -10,7 +10,7 @@ export const deployFunctionsConsumer = async (
   functionsConsumerBytecode: ethers.utils.BytesLike | { object: string }
 ) => {
   const oracleAddress = networksData[chain].functionsOracle
-  const provider = new ethers.providers.Web3Provider(window.ethereum)
+  const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
   const signer = provider.getSigner()
   const contractFactory = new ethers.ContractFactory(functionConsumerAbi, functionsConsumerBytecode, signer)
   const functionsConsumer = (await (await contractFactory.deploy(oracleAddress)).deployed()) as FunctionsConsumer
@@ -18,7 +18,7 @@ export const deployFunctionsConsumer = async (
 }
 
 export const clearFunctionsConsumerListeners = async (functionsConsumerAddress: string) => {
-  const provider = new ethers.providers.Web3Provider(window.ethereum)
+  const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
   const functionsConsumer = FunctionsConsumerFactory.connect(functionsConsumerAddress, provider)
   functionsConsumer.removeAllListeners()
 }
@@ -40,9 +40,10 @@ export const executeRequest: (
   subscriptionId: ethers.BigNumberish,
   gasLimit: ethers.BigNumberish
 ) => {
-  const provider = new ethers.providers.Web3Provider(window.ethereum)
+  const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
   const signer = provider.getSigner()
   const functionsConsumer = FunctionsConsumerFactory.connect(functionsConsumerAddress, signer)
+
   const receipt = await (
     await functionsConsumer.executeRequest(
       source,

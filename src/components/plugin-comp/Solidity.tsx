@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import Form from "react-bootstrap/Form"
 import { useSelector, useDispatch } from "react-redux"
 import { selectContract } from "../../redux/reducers"
@@ -7,19 +8,22 @@ import { errorsInFile } from "../../utils"
 export const Solidity = () => {
   const dispatch = useDispatch()
   const compiledSolidityFiles = useSelector((state: RootState) => state.remix.compiledSolidityFiles)
+  const selectedContract = useSelector((state: RootState) => state.remix.selectedContract)
   const solidityFiles = Object.keys(compiledSolidityFiles)
 
-  let compiled = false
-  let isError = false
-  let errorMessages: string[] = []
+  const file = compiledSolidityFiles[selectedContract.fileName]
+  const compiled = file ? file.compiled : false
+  const errors = errorsInFile(file)
+  const isError = errors.isError
+  const errorMessages: string[] = errors.errorMessages
 
-  const refreshDisplayData = (selectedFile: string) => {
-    const file = compiledSolidityFiles[selectedFile]
-    const errors = errorsInFile(file)
-    compiled = file.compiled
-    isError = errors.isError
-    errorMessages = errors.errorMessages
-  }
+  useEffect(() => {
+    if (compiledSolidityFiles && Object.keys(compiledSolidityFiles).length > 0) {
+      const fileName = Object.keys(compiledSolidityFiles)[0]
+      const contractName = Object.keys(compiledSolidityFiles[fileName].contracts)[0]
+      dispatch(selectContract({ fileName, contractName }))
+    }
+  }, [dispatch, compiledSolidityFiles])
 
   return (
     <Form.Group>
@@ -29,22 +33,20 @@ export const Solidity = () => {
           <Form.Select
             className="udapp_contractNames custom-select"
             style={{ display: "block" }}
+            value={selectedContract.fileName + "_+_" + selectedContract.contractName}
             onChange={(event) => {
               event.preventDefault()
               const selectedIndex = event.target.options.selectedIndex
               const key = event.target.options[selectedIndex].getAttribute("data-key") as string
               const [fileName, contractName] = key.split("_+_")
-              refreshDisplayData(fileName)
               dispatch(selectContract({ fileName, contractName }))
             }}
           >
             {solidityFiles.map((fileName, index1) => {
-              if (index1 === 0) refreshDisplayData(fileName)
               const compiledFile = compiledSolidityFiles[fileName]
               const contracts = compiledFile.contracts
               // errorsInFile
               return Object.keys(contracts).map((contractName, index2) => {
-                if (index1 === 0 && index2 === 0) dispatch(selectContract({ fileName, contractName }))
                 return (
                   <option key={fileName + "_+_" + contractName} data-key={fileName + "_+_" + contractName}>
                     {contractName}

@@ -3,7 +3,6 @@ import { Table } from "react-bootstrap"
 import { useSelector, useDispatch } from "react-redux"
 import { RootState } from "../../redux/store"
 import { changeLinkBalance, changeNativeBalance } from "../../redux/reducers"
-import { BigNumberish } from "ethers"
 import { chainsData, networksData } from "../../data"
 import {
   clearLinkEvents,
@@ -14,6 +13,7 @@ import {
   registerLinkEvent,
   registerNativeBalanceEvent,
 } from "../../utils"
+import { dispatchHandler } from "../../models"
 
 export const Balance = () => {
   const dispatch = useDispatch()
@@ -41,12 +41,11 @@ export const Balance = () => {
     }
     if (selectedAccount && connected) {
       getBalance()
-      registerLinkEvent(selectedAccount, networksData[chain].linkToken, (linkBalance: BigNumberish) => {
-        dispatch(changeLinkBalance(linkBalance))
-      })
-      const nativeBalanceListner = registerNativeBalanceEvent(selectedAccount, (nativeBalance: BigNumberish) => {
-        dispatch(changeNativeBalance(nativeBalance))
-      })
+      registerLinkEvent(selectedAccount, networksData[chain].linkToken, dispatchHandler(dispatch, changeLinkBalance))
+      const nativeBalanceListner = registerNativeBalanceEvent(
+        selectedAccount,
+        dispatchHandler(dispatch, changeNativeBalance)
+      )
       return () => {
         clearLinkEvents(networksData[chain].linkToken)
         clearNativeBalanceEvent(nativeBalanceListner)

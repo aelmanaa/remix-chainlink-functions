@@ -8,9 +8,10 @@ import {
   setChainErrorMessage,
   setContextErrorMessage,
   setFunctionsConsumerAddress,
+  changeChain,
 } from "../redux/reducers"
 import { Account, Networks, Balance } from "./context-comp"
-import { ConnectInfo, ProviderRpcError } from "../models"
+import { ConnectInfo, dispatchHandler, ProviderRpcError } from "../models"
 import { RootState } from "../redux/store"
 import { getAccounts, getChain, handleAccountsChanged, handleChainChanged } from "../utils"
 
@@ -19,15 +20,31 @@ export const Context = () => {
   const errorMessage = useSelector((state: RootState) => state.context.errorMessage)
   useEffect(() => {
     const chainConnectHandler = (connectInfo: ConnectInfo) => {
-      handleChainChanged(connectInfo.chainId, dispatch)
+      handleChainChanged(
+        connectInfo.chainId,
+        dispatchHandler(dispatch, changeChain),
+        dispatchHandler(dispatch, changeChainConnected),
+        dispatchHandler(dispatch, setChainErrorMessage)
+      )
     }
 
     const chainDisconnectHandler = (error: ProviderRpcError) => {
-      handleChainChanged("", dispatch, error)
+      handleChainChanged(
+        "",
+        dispatchHandler(dispatch, changeChain),
+        dispatchHandler(dispatch, changeChainConnected),
+        dispatchHandler(dispatch, setChainErrorMessage),
+        error
+      )
     }
 
     const chainHandler = (chainId: string) => {
-      handleChainChanged(chainId, dispatch)
+      handleChainChanged(
+        chainId,
+        dispatchHandler(dispatch, changeChain),
+        dispatchHandler(dispatch, changeChainConnected),
+        dispatchHandler(dispatch, setChainErrorMessage)
+      )
     }
 
     const accountsHandler = (accounts: string[]) => {
@@ -45,10 +62,21 @@ export const Context = () => {
         }
         try {
           const chainId = await getChain()
-          handleChainChanged(chainId, dispatch)
+          handleChainChanged(
+            chainId,
+            dispatchHandler(dispatch, changeChain),
+            dispatchHandler(dispatch, changeChainConnected),
+            dispatchHandler(dispatch, setChainErrorMessage)
+          )
         } catch (err) {
           console.error(err)
-          handleChainChanged("", dispatch, err as ProviderRpcError)
+          handleChainChanged(
+            "",
+            dispatchHandler(dispatch, changeChain),
+            dispatchHandler(dispatch, changeChainConnected),
+            dispatchHandler(dispatch, setChainErrorMessage),
+            err as ProviderRpcError
+          )
         }
         dispatch(setContextErrorMessage(""))
         // Register events

@@ -11,12 +11,12 @@ import {
   TRANSACTION_STATUS,
 } from "../../models"
 import {
-  initializeFunctionsConsumerState,
   setFunctionsConsumerAddress,
   setFunctionsConsumerExecuteRequest,
   setFunctionsConsumerSubscription,
   setSourceFiles,
   setTransaction,
+  setTransactions,
 } from "../../redux/reducers"
 import { RootState } from "../../redux/store"
 import {
@@ -49,16 +49,34 @@ export const Transaction = ({
   getJavascriptSources: () => Promise<Record<string, SOURCE_FILE>>
 }) => {
   const dispatch = useDispatch()
+  const initializeTransactionsState = () => {
+    dispatch(setFunctionsConsumerAddress(""))
+    dispatch(setFunctionsConsumerExecuteRequest({}))
+    dispatch(setFunctionsConsumerSubscription({}))
+    dispatch(setTransactions([]))
+  }
   const compiledSolidityFiles = useSelector((state: RootState) => state.remix.compiledSolidityFiles)
   const selectedSolidityContract = useSelector((state: RootState) => state.remix.selectedContract)
   const chain = useSelector((state: RootState) => state.chain.chain)
   const connected = useSelector((state: RootState) => state.chain.chainConnected)
   const selectedAccount = useSelector((state: RootState) => state.account.value.selectedAccount)
+  const functionsOracleRegistryAddress = useSelector(
+    (state: RootState) => networksData[state.chain.chain].functionsOracleRegistry
+  )
   const functionsConsumerAddress = useSelector((state: RootState) => state.functionsConsumer.address)
   const subscription = useSelector((state: RootState) => state.functionsConsumer.subscription)
   const transactions = useSelector((state: RootState) => state.functionsConsumer.transactions)
   const request = useSelector((state: RootState) => state.functionsConsumer.request)
   const sourceFiles = useSelector((state: RootState) => state.remix.sourceFiles)
+
+  useEffect(() => {
+    if (chain) {
+      dispatch(setFunctionsConsumerAddress(""))
+      dispatch(setFunctionsConsumerExecuteRequest({}))
+      dispatch(setFunctionsConsumerSubscription({}))
+      dispatch(setTransactions([]))
+    }
+  }, [dispatch, chain])
   useEffect(() => {
     if (sourceFiles && Object.keys(sourceFiles).length > 0 && !request.sourcePath) {
       dispatch(
@@ -68,7 +86,7 @@ export const Transaction = ({
       )
     }
     if (transactions && transactions.length > 0) {
-      listenToRegistryEvents(networksData[chain].functionsOracleRegistry, async (args) => {
+      listenToRegistryEvents(functionsOracleRegistryAddress, async (args) => {
         if (transactions.findIndex((element) => element.requestId === (args[0] as string)) === -1) return
         const payload: TRANSACTION = {
           requestId: args[0] as string,
@@ -80,24 +98,19 @@ export const Transaction = ({
         dispatch(setTransaction(payload))
 
         // refresh subscription balance
-        const balance = await getSubscriptionIdBalance(id, networksData[chain].functionsOracleRegistry)
+        const balance = await getSubscriptionIdBalance(id, functionsOracleRegistryAddress)
         dispatch(setFunctionsConsumerSubscription({ balance: balance.toHexString() }))
       })
     }
     return () => {
       clearFunctionsConsumerListeners(functionsConsumerAddress)
-      removeAllRegistryListeners(networksData[chain].functionsOracleRegistry)
+      removeAllRegistryListeners(functionsOracleRegistryAddress)
     }
   }, [
     dispatch,
-    chain,
-    connected,
-    selectedAccount,
-    compiledSolidityFiles,
-    selectedSolidityContract,
+    functionsOracleRegistryAddress,
     functionsConsumerAddress,
     sourceFiles,
-    subscription,
     transactions,
     request.sourcePath,
   ])
@@ -220,11 +233,11 @@ export const Transaction = ({
                     `Consumer: ${functionsConsumer.address} added to subscription ${subscription.id}`
                   )
                 }
-                dispatch(initializeFunctionsConsumerState())
+                initializeTransactionsState()
                 dispatch(setFunctionsConsumerAddress(functionsConsumer.address))
               } catch (error) {
                 await logToRemixTerminal("error", `Error during deployment ${error}`)
-                dispatch(initializeFunctionsConsumerState())
+                initializeTransactionsState()
               }
             }}
           >
@@ -264,7 +277,7 @@ export const Transaction = ({
                                 placeholder="string"
                                 style={{ display: "block" }}
                                 id="executeRequest-source"
-                                defaultValue={request.sourcePath ? sourceFiles[request.sourcePath].fileName : ""}
+                                value={request.sourcePath ? sourceFiles[request.sourcePath].fileName : ""}
                                 onClick={async (event) => {
                                   event.preventDefault()
                                   const samples = await getJavascriptSources()
