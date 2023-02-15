@@ -10,7 +10,13 @@ const initialRequestState: REQUEST = {
   secretLocation: Location.Inline,
   expectedReturnType: EXPECTED_RETURN_TYPE.Buffer,
 }
-const initialState: { address: string; request: REQUEST; subscription: SUBSCRIPTION; transactions: TRANSACTION[] } = {
+const initialState: {
+  address: string
+  request: REQUEST
+  subscription: SUBSCRIPTION
+  transactions: TRANSACTION[]
+  numberSecrets: number
+} = {
   address: "",
   request: initialRequestState,
   subscription: {
@@ -19,6 +25,7 @@ const initialState: { address: string; request: REQUEST; subscription: SUBSCRIPT
     owner: "",
   },
   transactions: [],
+  numberSecrets: 1,
 }
 
 export const functionsConsumerSlice = createSlice({
@@ -45,6 +52,9 @@ export const functionsConsumerSlice = createSlice({
     setTransactions: (state, action: PayloadAction<TRANSACTION[]>) => {
       state.transactions = action.payload
     },
+    incrementSecretNumber: (state) => {
+      state.numberSecrets++
+    },
   },
 })
 
@@ -54,6 +64,7 @@ export const {
   setSubscription: setFunctionsConsumerSubscription,
   setTransaction,
   setTransactions,
+  incrementSecretNumber,
 } = functionsConsumerSlice.actions
 
 export default functionsConsumerSlice.reducer

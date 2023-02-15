@@ -35,9 +35,10 @@ import {
   formatError,
 } from "../../utils"
 import Form from "react-bootstrap/esm/Form"
-import { Col, InputGroup, Row } from "react-bootstrap"
+import { Col, InputGroup, Row, Tab, Tabs } from "react-bootstrap"
 import { networksData } from "../../data"
 import { BigNumber, BigNumberish } from "ethers"
+import { Secrets } from "."
 
 export const Transaction = ({
   logToRemixTerminal,
@@ -51,7 +52,7 @@ export const Transaction = ({
   const dispatch = useDispatch()
   const initializeTransactionsState = () => {
     dispatch(setFunctionsConsumerAddress(""))
-    dispatch(setFunctionsConsumerExecuteRequest({}))
+    dispatch(setFunctionsConsumerExecuteRequest({ args: [], secrets: "" }))
     dispatch(setFunctionsConsumerSubscription({}))
     dispatch(setTransactions([]))
   }
@@ -245,7 +246,7 @@ export const Transaction = ({
           </Button>
         </Col>
       </Form.Group>
-      {functionsConsumerAddress && <h4>Deployed contract</h4>}
+      <h4>Deployed contract</h4>
       {functionsConsumerAddress && (
         <div className="instance udapp_instance udapp_run-instance border-dark">
           <div className="udapp_title pb-0 alert alert-secondary">
@@ -266,105 +267,115 @@ export const Transaction = ({
                     <div className="udapp_multiHeader">
                       <div className="udapp_multiTitle run-instance-multi-title pt-3">executeRequest</div>
                     </div>
-                    <Form.Group>
-                      <Col>
-                        <Row>
+                    <Tabs defaultActiveKey="execute-parameters" className="mb-3">
+                      <Tab eventKey="execute-parameters" title="Parameters">
+                        <Form.Group>
                           <Col>
+                            <Row>
+                              <Col>
+                                <Form.Group className="udapp_multiArg">
+                                  <Form.Label htmlFor="executeRequest-source"> source: </Form.Label>
+                                  <Form.Select
+                                    className="custom-select"
+                                    placeholder="string"
+                                    style={{ display: "block" }}
+                                    id="executeRequest-source"
+                                    value={request.sourcePath ? sourceFiles[request.sourcePath].fileName : ""}
+                                    onClick={async (event) => {
+                                      event.preventDefault()
+                                      const samples = await getJavascriptSources()
+                                      dispatch(setSourceFiles(samples))
+                                    }}
+                                    onChange={(event) => {
+                                      event.preventDefault()
+                                      const selectedIndex = event.target.options.selectedIndex
+                                      const key = event.target.options[selectedIndex].getAttribute("data-key") as string
+                                      dispatch(
+                                        setFunctionsConsumerExecuteRequest({
+                                          sourcePath: key,
+                                        })
+                                      )
+                                    }}
+                                  >
+                                    {sourceFiles &&
+                                      Object.keys(sourceFiles).map((key) => {
+                                        return (
+                                          <option key={key} data-key={key}>
+                                            {sourceFiles[key].fileName}
+                                          </option>
+                                        )
+                                      })}
+                                  </Form.Select>
+                                </Form.Group>
+                              </Col>
+                              <Col>
+                                <Form.Group className="udapp_multiArg">
+                                  <Form.Label htmlFor="executeRequest-args"> args: </Form.Label>
+                                  <Form.Control
+                                    id="executeRequest-args"
+                                    placeholder="string[]"
+                                    defaultValue={request.args}
+                                    onChange={(e) => {
+                                      e.preventDefault()
+                                      try {
+                                        const value = JSON.parse(e.target.value) as string[]
+                                        dispatch(
+                                          setFunctionsConsumerExecuteRequest({
+                                            args: value,
+                                          })
+                                        )
+                                      } catch (err) {}
+                                    }}
+                                  />
+                                </Form.Group>
+                              </Col>
+                              <Col>
+                                <Form.Group className="udapp_multiArg">
+                                  <Form.Label htmlFor="executeRequest-expectedResult"> Response decoder: </Form.Label>
+                                  <Form.Select
+                                    className="custom-select"
+                                    style={{ display: "block" }}
+                                    id="executeRequest-expectedResult"
+                                    onChange={(event) => {
+                                      event.preventDefault()
+                                      const selectedIndex = event.target.options.selectedIndex
+                                      const key = event.target.options[selectedIndex].getAttribute(
+                                        "data-key"
+                                      ) as unknown as EXPECTED_RETURN_TYPE
+                                      dispatch(
+                                        setFunctionsConsumerExecuteRequest({
+                                          expectedReturnType: key,
+                                        })
+                                      )
+                                    }}
+                                  >
+                                    {Object.keys(EXPECTED_RETURN_TYPE).map((key) => {
+                                      const keyNum = Number(key)
+                                      if (!isNaN(keyNum))
+                                        return (
+                                          <option key={keyNum} data-key={keyNum}>
+                                            {EXPECTED_RETURN_TYPE[keyNum]}
+                                          </option>
+                                        )
+                                      return null
+                                    })}
+                                  </Form.Select>
+                                </Form.Group>
+                              </Col>
+                            </Row>
                             <Form.Group className="udapp_multiArg">
-                              <Form.Label htmlFor="executeRequest-source"> source: </Form.Label>
-                              <Form.Select
-                                className="custom-select"
-                                placeholder="string"
-                                style={{ display: "block" }}
-                                id="executeRequest-source"
-                                value={request.sourcePath ? sourceFiles[request.sourcePath].fileName : ""}
-                                onClick={async (event) => {
-                                  event.preventDefault()
-                                  const samples = await getJavascriptSources()
-                                  dispatch(setSourceFiles(samples))
-                                }}
-                                onChange={(event) => {
-                                  event.preventDefault()
-                                  const selectedIndex = event.target.options.selectedIndex
-                                  const key = event.target.options[selectedIndex].getAttribute("data-key") as string
-                                  dispatch(
-                                    setFunctionsConsumerExecuteRequest({
-                                      sourcePath: key,
-                                    })
-                                  )
-                                }}
-                              >
-                                {sourceFiles &&
-                                  Object.keys(sourceFiles).map((key) => {
-                                    return (
-                                      <option key={key} data-key={key}>
-                                        {sourceFiles[key].fileName}
-                                      </option>
-                                    )
-                                  })}
-                              </Form.Select>
+                              <Form.Label htmlFor="executeRequest-secrets"> secrets: </Form.Label>
+                              <InputGroup.Text id="executeRequest-secrets" placeholder="bytes">
+                                {request.secrets || ""}
+                              </InputGroup.Text>
                             </Form.Group>
                           </Col>
-                          <Col>
-                            <Form.Group className="udapp_multiArg">
-                              <Form.Label htmlFor="executeRequest-args"> args: </Form.Label>
-                              <Form.Control
-                                id="executeRequest-args"
-                                placeholder="string[]"
-                                onChange={(e) => {
-                                  e.preventDefault()
-                                  try {
-                                    const value = JSON.parse(e.target.value) as string[]
-                                    dispatch(
-                                      setFunctionsConsumerExecuteRequest({
-                                        args: value,
-                                      })
-                                    )
-                                  } catch (err) {}
-                                }}
-                              />
-                            </Form.Group>
-                          </Col>
-                          <Col>
-                            <Form.Group className="udapp_multiArg">
-                              <Form.Label htmlFor="executeRequest-expectedResult"> Response decoder: </Form.Label>
-                              <Form.Select
-                                className="custom-select"
-                                style={{ display: "block" }}
-                                id="executeRequest-expectedResult"
-                                onChange={(event) => {
-                                  event.preventDefault()
-                                  const selectedIndex = event.target.options.selectedIndex
-                                  const key = event.target.options[selectedIndex].getAttribute(
-                                    "data-key"
-                                  ) as unknown as EXPECTED_RETURN_TYPE
-                                  dispatch(
-                                    setFunctionsConsumerExecuteRequest({
-                                      expectedReturnType: key,
-                                    })
-                                  )
-                                }}
-                              >
-                                {Object.keys(EXPECTED_RETURN_TYPE).map((key) => {
-                                  const keyNum = Number(key)
-                                  if (!isNaN(keyNum))
-                                    return (
-                                      <option key={keyNum} data-key={keyNum}>
-                                        {EXPECTED_RETURN_TYPE[keyNum]}
-                                      </option>
-                                    )
-                                  return null
-                                })}
-                              </Form.Select>
-                            </Form.Group>
-                          </Col>
-                        </Row>
-                        <Form.Group className="udapp_multiArg">
-                          <Form.Label htmlFor="executeRequest-secrets"> secrets: </Form.Label>
-                          <InputGroup.Text id="executeRequest-secrets">bytes</InputGroup.Text>
                         </Form.Group>
-                      </Col>
-                    </Form.Group>
+                      </Tab>
+                      <Tab eventKey="execute-secrets" title="Secrets">
+                        <Secrets />
+                      </Tab>
+                    </Tabs>
                     <Col>
                       <Form.Group className="d-flex udapp_group udapp_multiArg">
                         <Button

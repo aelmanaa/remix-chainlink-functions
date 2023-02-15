@@ -43,7 +43,7 @@ export const executeRequest: (
   const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
   const signer = provider.getSigner()
   const functionsConsumer = FunctionsConsumerFactory.connect(functionsConsumerAddress, signer)
-
+  console.log(source, secrets || [], secretsLocation, args || [], subscriptionId, gasLimit)
   const receipt = await (
     await functionsConsumer.executeRequest(
       source,
