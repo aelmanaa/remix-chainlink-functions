@@ -4,9 +4,9 @@
     "name": "Polygon Mumbai",
     "native": "MATIC"
   },
-  "ETHEREUM_GOERLI": {
-    "chainId": "0x5",
-    "name": "Ethereum Goerli",
+  "ETHEREUM_SEPOLIA": {
+    "chainId": "0xaa36a7",
+    "name": "Ethereum Sepolia",
     "native": "ETH"
   }
 }
